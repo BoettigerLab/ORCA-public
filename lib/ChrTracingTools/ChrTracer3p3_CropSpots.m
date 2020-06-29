@@ -102,7 +102,7 @@ datSpts = cell(numHybes,numDataChns);
 fidSptsRaw = fidSpts;
 datSptsRaw = datSpts;
 for h=1:numHybes   % consider parfor this
-
+try
     % we shift the center by the integer pixel amount to decide what region
     % of the dax to load. we shift that resulting image by the remaining
     % subpixel amount for the final image;
@@ -198,6 +198,10 @@ for h=1:numHybes   % consider parfor this
         movieReg = ApplyReg(im,subPixel);  % apply hybe specific drift correction
         datSpts{h,n} = movieReg;
     end
+catch er
+    disp('debug here');
+    error(er.getReport);
+end
 end
 
 %%

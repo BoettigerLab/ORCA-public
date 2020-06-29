@@ -2,7 +2,7 @@ function WriteInfoFiles(infoFiles, varargin)
 %--------------------------------------------------------------------------
 % WriteInfoFiles(infoFiles, varargin);
 % This function writes the contents of the structure array, infoFiles, into
-% .ini files
+% .inf files
 %--------------------------------------------------------------------------
 % Inputs:
 %
@@ -20,11 +20,12 @@ function WriteInfoFiles(infoFiles, varargin)
 % October 3, 2012
 % jeffmoffitt@gmail.com
 %
-% Version 1.0
-%--------------------------------------------------------------------------
-% Updates
+% Updates --------------
+% Version 1.1
 % 01/20/13 Alistair Boettiger (boettiger.alistair@gmail.com)
 % fixed vend hend bug that causes files not to display in Insight3
+% 
+% 
 %--------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------

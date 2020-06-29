@@ -179,7 +179,7 @@ defaults(end+1,:) = {'imContrastLow','fraction',0.5};
 CT{handles.id}.parsSelectSpots = ParseVariableArguments([],defaults,'ChrTracer_SelectSpots');
 
 
-% Crop Spots ----------------------------------------------%
+% Crop Spot ----------------------------------------------%
 defaults = cell(0,3);
 defaults(end+1,:) = {'selectSpot', 'positive', 1};
 defaults(end+1,:) = {'boxWidth', 'positive', 18}; % was 16
@@ -261,7 +261,7 @@ CT{handles.id}.stepNames = {'Load Ex. Table';
                             'Fix Global Drift';  % Save FOV Overlay
                             'Validate Drift Fix';
                             'Select Spots';
-                            'Crop Spots';
+                            'Crop Spot';
                             'Fit Spots';
                             'Select All Spots';
                             'Fit All'};
@@ -273,7 +273,7 @@ CT{handles.id}.stepDirs = {...
 'Click "Fix Global Drift" to compute corrections x,y stage drift. Select "Step Pars" to specify a subset of FOVs if desired.';
 'Click "Validate Drift Fix" to see results of x,y drift correction.  If image looks white instead of color shifted, proceed to "Next Step".';
 'Click "Select Spots" to auto-ID spots.  Click "Step Pars" to change fitting parameters for selection.';
-'Click "Step Pars" to select the number of a spot to plot, and adjust crop-box size (see figure from "Select Spots" step). Then click "Crop Spots".';
+'Click "Step Pars" to select the number of a spot to plot, and adjust crop-box size (see figure from "Select Spots" step). Then click "Crop Spot".';
 'Click "Step Pars" to adjust fit thresholds and fit parameters. Then click "Fit Spots".';
 'Click "Step Pars" to specify FOV to process. Click "Select All Spots" to process first FOV. Click "Next Step" to record data for current FOV and advance to next.';
 'Click "Fit All" to apply current fitting parameters to all FOV.'
@@ -314,7 +314,7 @@ elseif strcmp(currStepName,'Fix Global Drift')
     [CT{handles.id}.fiducialAlignFrames,CT{handles.id}.regData] = ...
         ChrTracer3p2_FixGlobalDrift(CT{handles.id}.fiducialFrames,'parameters',pars,'saveFolder',CT{handles.id}.saveFolder);
     % setup next step
-    CT{handles.id}.currStep = 'Validate Drift Fix';
+   %  CT{handles.id}.currStep = 'Validate Drift Fix'; 
     
     
 %---------------------------- Validate Drift Fix --------------------------%    
@@ -346,8 +346,8 @@ elseif strcmp(currStepName,'Select Spots') % SELECT ROI
     % CT{handles.id}.allLociXY{pars.fov} = CT{handles.id}.lociXY;
 
     
-%----------------------------- CROP SPOTS --------------------------------%    
-elseif strcmp(currStepName,'Crop Spots') % PLOT SPOTS
+%----------------------------- Crop Spot --------------------------------%    
+elseif strcmp(currStepName,'Crop Spot') % PLOT SPOTS
      pars = CT{handles.id}.parsCrop;
      f = CT{handles.id}.currFOV; % pars.fov;
      pars.currentSpot = CT{handles.id}.parsCrop.selectSpot;
@@ -363,8 +363,10 @@ elseif strcmp(currStepName,'Crop Spots') % PLOT SPOTS
      [CT{handles.id}.fidSpots,CT{handles.id}.dataSpots] = ...
          ChrTracer3p3_CropSpots( CT{handles.id}.rawDataNames(:,f),regData,...
               CT{handles.id}.eTable,CT{handles.id}.lociXY,'parameters',pars);
-          
-     CT{handles.id}.currStep = 'Fit Spots'; % Auto advance to next step
+     disp('spots selected');   
+     
+    set(handles.TextDir,'String','Spot selected. Go to Next Step to Fit Spots'); guidata(hObject, handles);
+   %   CT{handles.id}.currStep = 'Fit Spots'; % Auto advance to next step
      
 %-------------------------------- FIT SPOTS ------------------------------%  
 elseif strcmp(currStepName,'Fit Spots') 
@@ -391,7 +393,7 @@ elseif strcmp(currStepName,'Fit All')
     % use the auto-saved versions of crop and fit
     %   if the system crashes, this means it will resume with the custom
     %   selected versions, not the default values. 
-    parsCrop = table2struct(readtable([saveFolder,'Pars Crop Spots.csv']));
+    parsCrop = table2struct(readtable([saveFolder,'Pars Crop Spot.csv']));
     parsFit = table2struct(readtable([saveFolder,'Pars Fit Spots.csv']));
     
     % remove fovs which lack ROI spots or are not requested.
@@ -474,7 +476,7 @@ elseif strcmp(currStepName,'MemMap Data')
     CT{handles.id}.parsMemMapData = SimpleParameterGUI(CT{handles.id}.parsMemMapData);
 elseif strcmp(currStepName,'Select Spots')
     CT{handles.id}.parsSelectSpots = SimpleParameterGUI(CT{handles.id}.parsSelectSpots); 
-elseif strcmp(currStepName,'Crop Spots')
+elseif strcmp(currStepName,'Crop Spot')
     CT{handles.id}.parsCrop = SimpleParameterGUI(CT{handles.id}.parsCrop); 
 elseif strcmp(currStepName,'Fit Spots')
     CT{handles.id}.parsFit = SimpleParameterGUI(CT{handles.id}.parsFit);
@@ -688,7 +690,7 @@ try
         parsOut = struct2table(CT{handles.id}.parsMemMapData);
     elseif strcmp(currStepName,'Select Spots')
         parsOut = struct2table(CT{handles.id}.parsSelectSpots ); 
-    elseif strcmp(currStepName,'Crop Spots')
+    elseif strcmp(currStepName,'Crop Spot')
         parsOut = struct2table(CT{handles.id}.parsCrop); 
     elseif strcmp(currStepName,'Fit Spots')
         parsOut = struct2table(CT{handles.id}.parsFit);
@@ -724,7 +726,7 @@ try
         else
             error('loaded parameters has wrong fields');
         end
-    elseif strcmp(currStepName,'Crop Spots')
+    elseif strcmp(currStepName,'Crop Spot')
         if length(fields(CT{handles.id}.parsCrop)) == length(fields(parsIn))
             CT{handles.id}.parsCrop = parsIn;
         else

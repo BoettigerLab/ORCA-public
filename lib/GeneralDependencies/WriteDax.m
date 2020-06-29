@@ -20,6 +20,9 @@ defaults(end+1,:) = {'verbose', 'boolean', true}; %
 defaults(end+1,:) = {'dataType','string','little endian'};
 parameters = ParseVariableArguments(varargin, defaults, mfilename);
 
+% enforce no 'dax' in the inf name
+parameters.daxName = regexprep(parameters.daxName,'.dax','');
+
 [yDim,xDim,nFrames] = size(dax); 
 
                  infoFile.localName= [parameters.daxName,'.inf'];

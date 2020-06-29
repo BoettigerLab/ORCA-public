@@ -10,15 +10,22 @@ global matlabFunctionsPath
 % defaults
 defaults = cell(0,3);
 defaults(end+1,:) = {'verbose','boolean',true};
-
+defaults(end+1,:) = {'flip','boolean',false};
 
 if nargin > 1
-    pts = varargin{1};
+    if ~ischar(varargin{1})
+        pts = varargin{1};
+        varin = varargin(2:end);
+    else
+        pts = 256;
+        varin = varargin;
+    end
 else
     pts = 256;
+    varin = varargin;
 end
 
-varin = varargin(2:end);
+
 parameters = ParseVariableArguments(varin,defaults,mfilename);
 
 
@@ -45,7 +52,8 @@ catch
     % Black to white colormaps via the indicated color name;
   switch clrmapName
          
-      
+        case 'whsv'
+            clrmap = [1 1 1; hsv(pts-1)];
         case 'yellow'
         clrmap = hot(pts);
         clrmap = [clrmap(:,1),clrmap(:,1),clrmap(:,2)];
@@ -152,6 +160,57 @@ catch
           kRedToRed(n,:) = [.5*(n-1)/(nPts-1)+.5,0,0];
         end
         clrmap =[kRedToRed; redToWhite];   
+           
+      case 'CyanToWhite'
+        nPts = round(pts);
+        cyanToWhite = zeros(nPts,3);
+        for n=1:nPts
+          % cyanToWhite(n,:) = [((n-1)/(nPts-1)),1,1];  % [1 1 1]...[0 .5 .5];
+          cyanToWhite(n,:) = [((n-1)/(nPts-1)),.5*(n-1)/(nPts-1)+.5,.5*(n-1)/(nPts-1)+.5];  % [1 1 1]...[0 .5 .5];
+        end
+        clrmap = cyanToWhite;
+    
+        
+      case 'blackHotCold'
+        nPts = round(pts/2);
+        rPts = round(nPts/3);
+        bPts = round(nPts/2);
+        blackToRed = zeros(rPts,3);
+        redToOrange = zeros(rPts,3);
+        orangeToWhite= zeros(rPts,3);
+        blackToBlue = zeros(bPts,3);
+        blueToCyan = zeros(bPts,3);
+        for n=1:rPts
+            blackToRed(n,:) = [(n-1)/rPts,0,0];
+            redToOrange(n,:) = [1,(n-1)/rPts,0];
+            orangeToWhite(n,:) = [1,1,(n-1)/rPts];
+        end
+        for n=1:bPts
+            blackToBlue(n,:) = [0,0,(n-1)/bPts];
+            blueToCyan(n,:) = [0,(n-1)/bPts,1];
+        end
+        clrmap = cat(1,flipud(blueToCyan),flipud(blackToBlue), blackToRed,redToOrange,orangeToWhite);
+        
+        
+    case 'whiteHotCold'
+        bPts = round(pts/6);
+        blueToBlueK = zeros(bPts,3);
+        cyanToBlue = zeros(bPts,3);
+        whiteToCyan = zeros(bPts,3);
+        redToRedK = zeros(bPts,3);
+        yellowToRed = zeros(bPts,3);
+        whiteToYellow = zeros(bPts,3);
+        for n=1:bPts
+            blueToBlueK(n,:) = [0,0,(1.25*bPts-n+1)/(1.25*bPts)]; 
+            cyanToBlue(n,:) = [0,(bPts-n+1)/bPts,1];
+            whiteToCyan(n,:) = [(bPts-n+1)/bPts,1,1];
+            
+            redToRedK(n,:) = [(1.25*bPts-n+1)/(1.25*bPts),0,0]; 
+            yellowToRed(n,:) = [1,(bPts-n+1)/bPts,0];
+            whiteToYellow(n,:) = [1,1,(bPts-n+1)/bPts];
+        end
+        clrmap = cat(1,flipud(blueToBlueK),flipud(cyanToBlue),flipud(whiteToCyan), whiteToYellow,yellowToRed,redToRedK);
+        
           
       case 'RedWhiteBlueSat'
           nPts = round(pts/2);
@@ -183,16 +242,40 @@ catch
           end
           clrmap = flipud([.8 .2 .2; redToWhite; whiteToBlue; .9 .9 .9]);
           
-    case 'redToWhite'
-        nPts = pts;
-        redToWhite = zeros(nPts,3);
-        for n=1:nPts
-          redToWhite(n,:) = [1,((n-1)/(nPts-1)),((n-1)/(nPts-1))];
-        end
-        clrmap = redToWhite;   
-        
-        
+        case 'redToWhite'
+            nPts = pts;
+            redToWhite = zeros(nPts,3);
+            for n=1:nPts
+              redToWhite(n,:) = [1,((n-1)/(nPts-1)),((n-1)/(nPts-1))];
+            end
+            clrmap = redToWhite;   
 
+        case 'LogRedToWhite'
+            nPts = pts;
+            redToWhite = zeros(nPts,3);
+            x = logspace(1,log10(nPts),nPts);
+            for n=1:nPts
+              redToWhite(n,:) = [1,((x(n)-1)/(nPts-1)),((x(n)-1)/(nPts-1))];
+            end
+            clrmap = redToWhite;
+           
+            
+          case 'LogRedWhiteBlueK'
+          nPts = round(pts/3);
+          redToWhite = zeros(nPts,3);
+          whiteToBlue = zeros(nPts,3);
+          kBlueToBlue = zeros(nPts,3);
+          kRedToRed = zeros(nPts,3);
+          x = logspace(1,log10(nPts),nPts);
+          for n=1:nPts
+              kRedToRed(n,:) = [.5+x(n)/nPts*.5,0,0];
+              kBlueToBlue(n,:) = [0,0,.5+x(n)/nPts*.5];
+              redToWhite(n,:) = [1,x(n)/nPts,x(n)/nPts];
+              whiteToBlue(n,:) = [(nPts-x(n)+1)/nPts,(nPts-x(n)+1)/nPts,1];
+          end
+          clrmap = [kRedToRed; redToWhite; whiteToBlue; flipud(kBlueToBlue)];
+          clrmap(clrmap>1) = 1;   
+            
         
     case 'blueToWhite'
         nPts = pts;
@@ -210,14 +293,25 @@ catch
         end
         redToWhite = cat(1,[.8 .8 .8],redToWhite,[.96 .96 .96]);
         clrmap = redToWhite;   
-        
-    case 'redToWhite2'
+      
+    case 'RedToWhiteSat0'
         nPts = pts;
         redToWhite = zeros(nPts,3);
         for n=1:nPts
-          redToWhite(n,:) = [1,((n-1)/(nPts-1))^.5,((n-1)/(nPts-1))^.5];
+          redToWhite(n,:) = [1,((n-1)/(nPts-1)),((n-1)/(nPts-1))];
         end
-        clrmap = redToWhite; 
+        redToWhite = cat(1,[.8 .8 .8],redToWhite);
+        clrmap = redToWhite;  
+    
+    case 'RedToWhiteSatInf'
+        nPts = pts;
+        redToWhite = zeros(nPts,3);
+        for n=1:nPts
+          redToWhite(n,:) = [1,((n-1)/(nPts-1)),((n-1)/(nPts-1))];
+        end
+        redToWhite = cat(1,redToWhite,[.8 .8 .8]);
+        clrmap = redToWhite;  
+        
         
     case 'whiteToRed'
         nPts = pts;
@@ -267,6 +361,10 @@ catch
             warning(['colormap ',clrmapName,' not recognized']);
         end
   end
+end
+
+if parameters.flip
+    clrmap = flipud(clrmap);
 end
 
 if nargout == 0

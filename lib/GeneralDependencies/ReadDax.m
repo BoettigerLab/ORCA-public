@@ -131,9 +131,9 @@ end
 %--------------------------------------------------------------------------
 if isempty(infoFile)
     if isempty(fileName)
-        infoFile = ReadInfoFile('path', dataPath, 'verbose', verbose);
+        infoFile = ReadInfoFile('path', dataPath, 'verbose', false);
     else
-        infoFile = ReadInfoFile(fileName, 'verbose', verbose);
+        infoFile = ReadInfoFile(fileName, 'verbose', false);
     end
     
     if isempty(infoFile)
@@ -161,6 +161,9 @@ if ~isempty(allFrames)
 end
 
 % parse startFrame and endFrame
+if isempty(startFrame)
+   startFrame = 1; 
+end
 if isempty(endFrame)
     endFrame = framesInDax;
 end

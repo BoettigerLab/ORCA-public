@@ -210,10 +210,10 @@ function ButtonFindSpots_Callback(hObject, eventdata, handles)
         if strcmp(answer,'Load')
             spots = readtable(saveName);
             spots = spots{:,:};
-            CT{handles.id}.lociXY = spots;
-            figure(1); hold on;
-            plot(spots(:,1),spots(:,2),'yo');
-            text(spots(:,1)+2,spots(:,2),cellstr(num2str( (1:size(spots,1))')),'color','w');
+            CT{handles.id}.lociXY = spots; % will be plotted below
+%             figure(1); hold on;
+%             plot(spots(:,1),spots(:,2),'yo');
+%             text(spots(:,1)+2,spots(:,2),cellstr(num2str( (1:size(spots,1))')),'color','w');
         else
             CT{handles.id}.lociXY = AutoSelectSpots(im,'parameters',pars,'showPlots',false,'numberSpots',true);
             
