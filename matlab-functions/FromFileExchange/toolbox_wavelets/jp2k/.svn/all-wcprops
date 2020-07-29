@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/jp2k
+END
+jp2codec_degrade.m
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/jp2k/jp2codec_degrade.m
+END
+jp2_codec.m
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/jp2k/jp2_codec.m
+END
+jp2class_degrade.m
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/jp2k/jp2class_degrade.m
+END
+perform_jp2_rescaling.m
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/jp2k/perform_jp2_rescaling.m
+END
+compile_jp2k.m
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/jp2k/compile_jp2k.m
+END

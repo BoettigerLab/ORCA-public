@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex
+END
+perform_79_transform.def
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_79_transform.def
+END
+perform_haar_transform.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_haar_transform.cpp
+END
+perform_haar_transform.vcproj
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_haar_transform.vcproj
+END
+perform_lifting_transform.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_lifting_transform.cpp
+END
+perform_lifting_transform.vcproj
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_lifting_transform.vcproj
+END
+perform_79_transform.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_79_transform.cpp
+END
+perform_79_transform.vcproj
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_79_transform.vcproj
+END
+perform_haar_transform.h
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_haar_transform.h
+END
+perform_lifting_transform.h
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_lifting_transform.h
+END
+perform_79_transform.h
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_79_transform.h
+END
+config.h
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/config.h
+END
+toolbox_wavelets.sln
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/toolbox_wavelets.sln
+END
+perform_haar_transform.def
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_haar_transform.def
+END
+perform_lifting_transform.def
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/perform_lifting_transform.def
+END

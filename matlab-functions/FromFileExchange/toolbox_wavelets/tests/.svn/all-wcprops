@@ -1,0 +1,155 @@
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests
+END
+test_j2k.m
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_j2k.m
+END
+test_denoising_blsgsm.m
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_denoising_blsgsm.m
+END
+test_mex.m
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_mex.m
+END
+test_haar_transform_1d.m
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_haar_transform_1d.m
+END
+test_atrou.m
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_atrou.m
+END
+test_statistics.m
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_statistics.m
+END
+test_statistics_batch.m
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_statistics_batch.m
+END
+test_circle_haar.m
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_circle_haar.m
+END
+test_classical.m
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_classical.m
+END
+test_compression.m
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_compression.m
+END
+test_dualtree.m
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_dualtree.m
+END
+test_laplacian_do.m
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_laplacian_do.m
+END
+test_quincunx_ti.m
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_quincunx_ti.m
+END
+test_steerable.m
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_steerable.m
+END
+test_segmentation_gabor.m
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_segmentation_gabor.m
+END
+test_openjpeg.m
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_openjpeg.m
+END
+test_wavelet.m
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_wavelet.m
+END
+test_lifting_irregular.m
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_lifting_irregular.m
+END
+test_laplacian_pyramid.m
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_laplacian_pyramid.m
+END
+test_quincunx.m
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_quincunx.m
+END
+test_denoising.m
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_denoising.m
+END
+test_laplacian_arithmetic_coding.m
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_laplacian_arithmetic_coding.m
+END
+test_reorder_coefs.m
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_reorder_coefs.m
+END
+test_pyramidal.m
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_pyramidal.m
+END
+test_texture_synthesis_wavelets.m
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/tests/test_texture_synthesis_wavelets.m
+END

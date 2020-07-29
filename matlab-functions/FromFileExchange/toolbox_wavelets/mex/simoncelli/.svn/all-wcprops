@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli
+END
+range2.c
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/range2.c
+END
+convolve.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/convolve.h
+END
+innerProd.c
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/innerProd.c
+END
+edges-orig.c
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/edges-orig.c
+END
+histo.c
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/histo.c
+END
+corrDn.c
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/corrDn.c
+END
+edges.c
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/edges.c
+END
+pointOp.c
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/pointOp.c
+END
+wrap.c
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/wrap.c
+END
+upConv.c
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/upConv.c
+END
+convolve.c
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svnroot/matlabcompanion/!svn/ver/1/toolbox/toolbox_wavelets/mex/simoncelli/convolve.c
+END

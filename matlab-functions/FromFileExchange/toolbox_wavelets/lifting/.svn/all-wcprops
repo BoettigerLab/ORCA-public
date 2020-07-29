@@ -1,0 +1,77 @@
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting
+END
+perform_79_transform.m
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_79_transform.m
+END
+perform_lifting_transform_slow.m
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_lifting_transform_slow.m
+END
+perform_wavelet_transform_isotropic.m
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_wavelet_transform_isotropic.m
+END
+perform_79_transform_slow.m
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_79_transform_slow.m
+END
+perform_lifting_transform.mexmaci
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_lifting_transform.mexmaci
+END
+get_lifting_param.m
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/get_lifting_param.m
+END
+perform_79_transform.mexmaci
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_79_transform.mexmaci
+END
+perform_lifting_transform_byname.m
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_lifting_transform_byname.m
+END
+perform_wavelet_transform_hyperbolic.m
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_wavelet_transform_hyperbolic.m
+END
+perform_lifting_transform.dll
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_lifting_transform.dll
+END
+perform_lifting_transform.m
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_lifting_transform.m
+END
+perform_79_transform.dll
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svnroot/matlabcompanion/!svn/ver/7/toolbox/toolbox_wavelets/lifting/perform_79_transform.dll
+END
