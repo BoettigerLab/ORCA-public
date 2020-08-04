@@ -231,7 +231,7 @@ classdef AlignMosaicsGUI < StepGUIclass
             xyShifts2 = [xyShifts2.xShift,xyShifts2.yShift]; % convert table to matrix  NO LONGER NEEDED 
             self.chn2Data.uls = stageXY2 + xyShifts2;
             % plot the mosaic
-              mos2 = MosaicViewerRender(self.chn2Data.imageTiles(:,1),self.chn2Data.uls,...
+              mos2 = MosaicViewerRender(self.chn2Data.imageTiles(:,end),self.chn2Data.uls,...
                 'parameters',pars,'downsample',4,...
                 'fliplr',false,'flipud',false,'transpose',false);            
              figure(3); clf; imagesc(mos2);  
@@ -261,7 +261,7 @@ classdef AlignMosaicsGUI < StepGUIclass
                 case 'Overwrite'
                     % ---- Create downsampled mosaics
                     mos1 = TilesToMosaic(self.chn1Data.imageTiles,self.chn1Data.uls,'padMosaic',1,'parameters',pars);
-                    mos2 = TilesToMosaic(self.chn2Data.imageTiles(:,1),self.chn2Data.uls,'padMosaic',1,'parameters',pars);                    
+                    mos2 = TilesToMosaic(self.chn2Data.imageTiles(:,end),self.chn2Data.uls,'padMosaic',1,'parameters',pars);                    
                     % --- Merge and contrast
                     imO = MergeImages(mos1,mos2,'align',pars.align); % pad appropriately to make same size.
                     [h1,w1] = size(mos1);

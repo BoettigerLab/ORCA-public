@@ -11,11 +11,11 @@ You are free to use, modify and distribute all elements of this repository provi
 ## Installation
 1. Install Matlab   
     - This software is written in Matlab and requires and existing installation of Matlab (TM) R2016 or later.
-2. Pull the MERFISH_analysis repo: https://github.com/ZhuangLab/MERFISH_analysis. 
+2. Pull the MERFISH_analysis repo: [https://github.com/ZhuangLab/MERFISH_analysis](https://github.com/ZhuangLab/MERFISH_analysis). 
     - Some of the probe construction files use matlab classes from the MERFISH probe construction software written by Jeff Moffitt, which must be downloaded from the following repository due to licensing restrictions described in the readme file included with that repository. 
 3. Add the MERFISH_analysis repo to your matlab filepath
     - e.g. `addpath(genpath('C:\code\MERFISH_analysis\'))`
-    - Tip, if you add this command to your Matlab startup script, it will execute automatically when you start matlab.
+    - Tip, if you add this command to your Matlab startup script, it will execute automatically when you start matlab.  An example startup script is included in this repository.
 4. Add this folder to your matlab filepath 
     - e.g. `addpath(genpath('C:\code\ORCA-public\'))`
 
