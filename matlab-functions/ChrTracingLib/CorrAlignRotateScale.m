@@ -1,13 +1,9 @@
 function [alignValues,parameters] = CorrAlignRotateScale(im1,im2,varargin)
-%  [xshift,yshift,angle,rescale,parameters] = CorrAlignRotateScale(im1,im2,varargin)
-%  [tform,parameters] = CorrAlignRotateScale(im1,im2,varargin)
-%  Note: tform matrix is dependent on image size for rotation, as affine
-%  rotation is around 0,0 and needs to be shifted to the center of the
-%  image to match imrotate. 
+%  Scales, Rotates, Translates (in that order) to find maximum correlation
+%  between im1 and im2 to align the two
 %          
 % Inputs
-% {'showplot', 'boolean', false}; show image of before and after  
-% {'upsample', 'positive', 1}; upsample to get subpixel alignment
+%    im1 and im2  - 2D images
 % 
 % Compute xshift and yshift to align two images based on maximizing
 % cross-correlation.  Allows for rescaling and rotation if requested.
@@ -83,20 +79,20 @@ try
                  im2s = imwarp(im2,affine2d(T),'OutputView',imref2d(size(im2))); % first rescale
             end
             im2sr = imrotate(im2s,parameters.angles(r),'bilinear','crop');  % then rotate
-            corrM = xcorr2(single(im1),single(im2sr)); % The correlation map  % then translate
+            %corrM = xcorr2(single(im1),single(im2sr)); % The correlation map  % then translate
+            corrM = imfilter(double(im1),double(im2sr),'replicate','full','corr');
             % Just the center of the correlation map  
             corrMmini = corrM(H-Hc2+1:H+Hc2,W-Wc2+1:W+Wc2);
             [corrPeak(r,s),indmax] =  max(corrMmini(:));
             % use gradient maximum in place of correlation maximum
             if parameters.gradMax
                 % second derivative
-%                 [dX,dY] = gradient(corrMmini(:,:));
-%                 ddX = gradient(dX);
-%                 [~,ddY] = gradient(dY);
-%                 map = ddX+ddY;
+                 [dX,dY] = gradient(corrMmini(:,:));
+                 ddX = gradient(dX);
+                 [~,ddY] = gradient(dY);
+                 map = ddX+ddY;
                 % figure(29); clf; imagesc((ddX+ddY));
-                 map = gradient(gradient(corrMmini));
-                
+                % map = gradient(gradient(corrMmini));
                 [corrMin,indmax] =  min(map(:));
                 corrPeak(r,s) = -corrMin;
                 [cy,cx] = ind2sub(size(corrMmini),indmax);

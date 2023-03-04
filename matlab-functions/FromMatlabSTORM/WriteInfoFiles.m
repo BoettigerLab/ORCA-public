@@ -82,7 +82,9 @@ for i=1:length(infoFiles)
     if isempty(dirContents)
         mkdir(infoFiles(i).localPath);
     end
-    fid = fopen([infoFiles(i).localPath infoFiles(i).localName], 'w');
+    fileName = [infoFiles(i).localPath infoFiles(i).localName];
+    fileName = regexprep(fileName,'.dax','.inf');
+    fid = fopen(fileName, 'w');
     if fid < 0
         error(['Error opening ' infoFiles(i).localPath infoFiles(i).localName]);
     end

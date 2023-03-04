@@ -11,7 +11,9 @@ if length(varargin) > 0
 else
     spotCenter = zeros(3,1);
 end
-xyz = Column(xyz); 
+if numel(xyz)==3
+    xyz = Column(xyz);
+end
 
 % convert degrees to radians
 tx = tx*2*pi/360;

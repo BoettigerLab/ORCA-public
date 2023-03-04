@@ -1,14 +1,19 @@
 function datTable = ChrTracer3_FitSpots(fidSpts,datSpts,s,varargin)
+% 
+% fidSpts = cell array, Nhybs x 1, of 3D fiducial images
+% datSpts = cell array, Nhybs x nDataChns, of 3D data images
 
 % exTable =  E:\Alistair\2017-06-12_Emb10-12_BXC_cont\ExperimentLayout.xlsx
 % saveFolder = E:\Alistair\2017-06-12_Emb10-12_BXC_cont_NewAnalysis\
-% ChrTracer2
+% 
+% 
 
 defaults = cell(0,3);
 
 % Fiducial alignment defaults
 defaults(end+1,:) = {'refHybe','integer',1}; % hybe to use to start alignment
 defaults(end+1,:) = {'upsample','positive',8};  % 8 for accuracy 2 for speed
+defaults(end+1,:) = {'upsampleZ','positive',8};  % 8 for accuracy 2 for speed
 defaults(end+1,:) = {'maxXYdrift','positive',4};
 defaults(end+1,:) = {'maxZdrift','positive',6};
 defaults(end+1,:) = {'fidRegTheta','nonnegative',.6};
@@ -53,7 +58,7 @@ defaults(end+1,:) = {'datMinHBratio','nonnegative',1.2}; % peak value over backg
 defaults(end+1,:) = {'datMinAHratio','nonnegative',.25}; % fitted height over background vs peak value
 defaults(end+1,:) = {'datMaxUncert','nonnegative',2}; % pixels
 defaults(end+1,:) = {'keepBrightest','integer',1}; % will use variable idx to return the brightness rank of each spot  
-defaults(end+1,:) = {'bkdFrac','fraction',.1}; % 0 for off. dimmest bkdFrac of images will be used to compute local illumination background 
+defaults(end+1,:) = {'bkdFrac','fraction',0}; % 0 for off. dimmest bkdFrac of images will be used to compute local illumination background 
 
 
 % parse defaults
@@ -99,11 +104,11 @@ if ~(exist(tableSaveName,'file')==2 && exist(imageSaveName,'file')==2) || pars.o
     % kernel = TranslateImage(kernel,1.3,1.3); % sanity check, manual offset
 
     % fit fiducial kernel to define restricted field of view
-    if ~isinf(pars.fidMinPeakHeight)
+    if ~isinf(pars.fidMinPeakHeight) &&  pars.fidKeepBrightest > 0 
         fidTable = table();
         nTries = 5;
         n=0;
-        while isempty(fidTable) && n<nTries    
+        while isempty(fidTable) && n<nTries   
             try
                 fidTable = FindPeaks3D(kernel,...
                         'minPeakHeight',pars.fidMinPeakHeight,...
@@ -163,17 +168,31 @@ if ~(exist(tableSaveName,'file')==2 && exist(imageSaveName,'file')==2) || pars.o
             subplot(2,2,2);  Ncolor(2/numHybes*IncreaseContrast(stk0xz)); title('corr. fid x,z');
             hold on; plot(fidTable.x,fidTable.z-dispZpad,'r+');  
         end
-        % max dataspots
-        maxDat = cellfun(@(x) max(x(:)),datSpts);
-        figure(10); clf; bar(maxDat);
+
+        % Show absolute signal and background
+        figure(10); clf;
+        for d=1:nChns
+            maxDat = cellfun(@(x) quantile(x(:),.999),datSpts(:,d));
+            minDat = cellfun(@(x) quantile(x(:),.02),datSpts(:,d));
+            subplot(nChns,1,d);
+            bar(maxDat); hold on; bar(minDat);
+            title(['channel ',num2str(d)]);
+            legend('data spot','data background'); 
+        end
+        
+        % BACKGROUND subtraction
         if pars.bkdFrac ~= 0
-            bkdHybIdx = (maxDat <= quantile(maxDat,.1));
-            bkdMap = nanmedian(cat(4,datSpts{bkdHybIdx}),4);
-            %datSptsOrig = datSpts;
-            try  % handle errors on small datasets;
-                datSpts = cellfun(@(x) x-bkdMap,datSpts,'UniformOutput',false);
-            catch
-            end        
+            for d=1:nChns % d = 2
+                maxDat = cellfun(@(x) quantile(x(:),.999),datSpts(:,d));
+                bkdHybIdx = (maxDat <= quantile(maxDat,pars.bkdFrac));
+                bkdMap = nanmedian(cat(4,datSpts{bkdHybIdx,d}),4);
+                figure(10+d); clf; ProjectIm3D(bkdMap);
+                %datSptsOrig = datSpts;
+                try  % handle errors on small datasets;
+                    datSpts(:,d) = cellfun(@(x) x-bkdMap,datSpts(:,d),'UniformOutput',false);
+                catch
+                end        
+            end
         end
     end
     %------------------------------------------------------------------------% 
@@ -216,7 +235,13 @@ if ~(exist(tableSaveName,'file')==2 && exist(imageSaveName,'file')==2) || pars.o
                                 ' xshift ', num2str(shifts{h}.xshift),...
                                 ' yshift ',num2str(shifts{h}.yshift),...
                                 ' zshift ',num2str(shifts{h}.zshift)]);
-                        end
+                       end
+                elseif pars.fidKeepBrightest == 0
+                    fidSptsAlign{h}=fidSpts{h};
+                    shifts{h}.xshift = 0;
+                    shifts{h}.yshift = 0;
+                    shifts{h}.zshift = 0;
+                    shifts{h}.score = 1;
                 end
             
             % if pars.saveData || pars.showPlots
@@ -230,7 +255,7 @@ if ~(exist(tableSaveName,'file')==2 && exist(imageSaveName,'file')==2) || pars.o
                                     'zshift',shifts{h}.zshift,'upsample',pars.upsample,...
                                     'padValue',edgeValue(fidSpts{h}));
             else
-               datSptsAlign{h,:} = datSpts{h,:};
+               datSptsAlign(h,:) = datSpts(h,:);
                shifts{h}.xshift = 0; 
                shifts{h}.yshift = 0;
                shifts{h}.zshift = 0;
@@ -381,14 +406,18 @@ if ~(exist(tableSaveName,'file')==2 && exist(imageSaveName,'file')==2) || pars.o
                 end
 
                 % Data Projections
+                isData = strcmp(datPropTable.dataType,'H');
+                datSptsPlot = datSptsAlign(isData,:);
                 figure(3);  clf;
-                stk = cellfun(@(x) max(x,[],3),datSptsAlign,'UniformOutput',false);
+                stk = cellfun(@(x) max(x,[],3),datSptsPlot,'UniformOutput',false);
                 dat1xy = cat(3,stk{:});          
-                stk = cellfun(@(x) max(permute(x,[3,2,1]),[],3),datSptsAlign,'UniformOutput',false);
+                stk = cellfun(@(x) max(permute(x,[3,2,1]),[],3),datSptsPlot,'UniformOutput',false);
                 dat1xz = cat(3,stk{:});
                 dat1xz(dat1xz==0) = mode(nonzeros(dat1xz(:)));
-                subplot(1,2,1); im = Ncolor(dat1xy); imagesc(IncreaseContrast(im)); title('corr. data x,y');
-                subplot(1,2,2); im = Ncolor(dat1xz); imagesc(IncreaseContrast(im)); title('corr. data x,z');
+                subplot(1,2,1);  Ncolor(2/numHybes*IncreaseContrast(dat1xy)); title('corr. data x,y');
+                subplot(1,2,2);  Ncolor(2/numHybes*IncreaseContrast(dat1xz)); title('corr. data x,z');
+                % subplot(1,2,1); im = Ncolor(dat1xy); imagesc(IncreaseContrast(im)); title('corr. data x,y');
+                % subplot(1,2,2); im = Ncolor(dat1xz); imagesc(IncreaseContrast(im)); title('corr. data x,z');
             end
         end
 

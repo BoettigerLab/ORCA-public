@@ -2,54 +2,110 @@ function newMap = InterpMapNans(map,varargin)
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'badHybes','freeType',[]};
-defaults(end+1,:) = {'method',{'nextNonempty','interp'},'nextNonempty'};
+defaults(end+1,:) = {'badPixels','freeType',[]};
+defaults(end+1,:) = {'method',{'nextNonempty','moving','interp','loess','rloess'},'moving'}; % nextNonempty
+defaults(end+1,:) = {'window','nonnegative',4}; % nextNonempty
+defaults(end+1,:) = {'smoothMethod',{'moving','lowess','loess','sgolay','rlowess','rloess'},'moving'};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 if ~isempty(pars.badHybes)
     map(pars.badHybes,:) = NaN;
     map(:,pars.badHybes) = NaN;
 end
-
+if ~isempty(pars.badPixels)
+    for p=1:size(pars.badPixels,1)
+        map(pars.badPixels(p,1),pars.badPixels(p,2)) = NaN;
+        map(pars.badPixels(p,2),pars.badPixels(p,1)) = NaN;
+    end
+end
+% figure(10); clf; imagesc(map);
 nReads = size(map,1);
 
 % find a nonzero row, use it to get all the nan columns
 n = 1; 
 stop = false;
 while n<nReads && ~stop
-    if nansum(map(n,:)) == 0
+    if nansum(map(n,:)) <= 1
         n=n+1;
     else
         stop = true;
     end
 end
-badCols = find(isnan(map(n,:)));
+if ~isempty(pars.badPixels)
+    badCols = [find(isnan(map(n,:))),pars.badPixels(:,1)',pars.badPixels(:,2)'];
+else
+    badCols = find(isnan(map(n,:)));
+end
+% don't interpolate if there isn't data on either side
+nRows = nReads;
+badEnd = ismember(badCols,nRows);
+while any(badEnd)
+    badEnd = ismember(badCols,nRows);
+    badCols(badEnd) = [];
+    nRows = nRows -1;
+end
 
 newMap = map;
+tempMap = map;
+% figure(10); clf; imagesc(newMap);
 
-if strcmp(pars.method,'interp')
-    % not working yet: use a longer-range averaging filter
-    noData = isnan(map);
-    nRows = size(map,1);
+if strcmp(pars.method,'moving') || strcmp(pars.method,'loess') || strcmp(pars.method,'rloess') 
+    
     for r=1:nRows
-        if ~any(r==badCols)
-            yy = map(r,:);
-            yvalues= smooth(yy,0.05,'rloess');
-            addData = yvalues;
-            addData(~noData(r,:)) = map(r,~noData(r,:))';
-            % xx = xvalues;
-            % yy(noData(r,:)) = [];
-            % xx(noData(r,:)) = [];
-            % yvalues= smooth(yy,0.05,'rloess');
-            % yvalues = interp1(xx,yvalues,xvalues,'spline');
-            newMap(r,:) = addData;
-            % figure(3); clf; plot(xx,log10(yy),'k.');
-            % hold on; plot(xvalues,log10(yvalues),'ro');
-            % pause;
+        yy = map(r,1:nRows);
+        if any(~isnan(yy))
+             yvalues= smooth(1:nRows,yy,pars.window,pars.method);
+            tempMap(r,1:nRows) = yvalues;
         end
     end
-    figure(3); clf; subplot(1,2,1); imagesc(log10(map));
-    newMap(newMap<0.001) = 0;
-    subplot(1,2,2); imagesc(log10(newMap));
+    % figure(10); clf; imagesc(tempMap);
+    for r=1:nRows
+        yy = tempMap(1:nRows,r);
+        if any(~isnan(yy))
+            yvalues= smooth(1:nRows,yy,pars.window,pars.method);
+            tempMap(1:nRows,r) = yvalues;
+        end
+    end
+%     figure(10); clf; imagesc(tempMap);
+    
+    for r=badCols
+        newMap(1:nRows,r) = tempMap(1:nRows,r);
+        newMap(r,1:nRows) = tempMap(r,1:nRows);
+    end
+%     figure(10); clf;
+%     s1 = subplot(1,2,1); imagesc(map);
+%     s2 = subplot(1,2,2); imagesc(newMap);
+
+elseif strcmp(pars.method,'interp')
+    
+    for r=1:nRows
+        yy = map(r,1:nRows);
+        x = 1:nRows;
+        xx = x; 
+        xx(badCols) = [];
+        yy(badCols) = [];
+        yvalues = interp1(xx,yy,x);
+        tempMap(r,1:nRows) = yvalues;
+    end
+    % figure(10); clf; imagesc(tempMap);
+    for r=1:nRows
+        yy = tempMap(1:nRows,r);
+        x = 1:nRows;
+        xx = x; 
+        xx(badCols) = [];
+        yy(badCols) = [];
+        yvalues = interp1(xx,yy,x);
+        tempMap(1:nRows,r) = yvalues;
+    end
+%     figure(10); clf; imagesc(tempMap);
+    
+    for r=badCols
+        newMap(1:nRows,r) = tempMap(1:nRows,r);
+        newMap(r,1:nRows) = tempMap(r,1:nRows);
+    end
+%     figure(10); clf;
+%     s1 = subplot(1,2,1); imagesc(map);
+%     s2 = subplot(1,2,2); imagesc(newMap);
     
 elseif strcmp(pars.method,'nextNonempty')
     for b=badCols

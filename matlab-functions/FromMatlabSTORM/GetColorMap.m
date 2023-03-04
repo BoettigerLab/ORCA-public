@@ -51,7 +51,12 @@ catch
 
     % Black to white colormaps via the indicated color name;
   switch clrmapName
-         
+        case 'distColors'
+          clrmap = distinguishable_colors(pts);
+        case 'distColorsW'
+          clrmap = distinguishable_colors(pts-1);
+          clrmap = [1,1,1; clrmap];
+          
         case 'whsv'
             clrmap = [1 1 1; hsv(pts-1)];
         case 'yellow'
@@ -126,6 +131,25 @@ catch
           clrmap = [purpleToWhite*(2/3)+grayMap*(1/3); whiteToYellow*(7/8)+flipud(grayMap)*(1/8)];
           clrmap(clrmap>1) = 1;
           
+        case 'RedtoBlue'
+          nPts = round(pts);
+          redToBlue = zeros(pts,3);
+          for n=1:nPts
+              redToBlue(n,:) = [(nPts-n+1)/nPts,0,n/nPts];
+          end
+          clrmap = redToBlue;
+          
+      case 'RedBlackBlue'
+          nPts = round(pts/2);
+          redToBlack = zeros(nPts,3);
+          blackToBlue = zeros(nPts,3);
+          for n=1:nPts
+              redToBlack(n,:) = [(nPts-n+1)/nPts,0,0];
+              blackToBlue(n,:) = [0,0,n/nPts];
+          end
+          clrmap = [redToBlack; blackToBlue];
+
+          
       case 'RedWhiteBlue'
           nPts = round(pts/2);
           redToWhite = zeros(nPts,3);
@@ -160,6 +184,18 @@ catch
           kRedToRed(n,:) = [.5*(n-1)/(nPts-1)+.5,0,0];
         end
         clrmap =[kRedToRed; redToWhite];   
+
+      case 'WhiteRedBlack'
+          nPts = round(pts/2);
+          redToBlack = zeros(nPts,3);
+          whiteToRed = zeros(nPts,3);
+          for n=1:nPts            
+              redToBlack(n,:) = [(nPts-n+1)/nPts,0,0];
+              whiteToRed(n,:) = [1,(nPts-n+1)/nPts,(nPts-n+1)/nPts];
+          end
+          clrmap = [whiteToRed; redToBlack];  
+
+
            
       case 'CyanToWhite'
         nPts = round(pts);
@@ -169,6 +205,27 @@ catch
           cyanToWhite(n,:) = [((n-1)/(nPts-1)),.5*(n-1)/(nPts-1)+.5,.5*(n-1)/(nPts-1)+.5];  % [1 1 1]...[0 .5 .5];
         end
         clrmap = cyanToWhite;
+        
+     case 'CyanToBlack'
+        nPts = round(pts);
+        cyanToBlack = zeros(nPts,3);
+        for n=1:nPts
+          cyanToBlack(n,:) = [0,((n-1)/(nPts-1)),((n-1)/(nPts-1))];  % [1 1 1]...[0 .5 .5];
+          % cyanToWhite(n,:) = [((n-1)/(nPts-1)),.5*(n-1)/(nPts-1)+.5,.5*(n-1)/(nPts-1)+.5];  % [1 1 1]...[0 .5 .5];
+        end
+        clrmap = cyanToBlack;
+        
+    case 'cold'
+        nPts = round(pts/3);
+        blackToBlue = zeros(nPts,3);
+        blueToCyan = zeros(nPts,3);
+        cyanToWhite = zeros(nPts,3);
+        for n=1:nPts
+          blackToBlue(n,:) = [0,0,(n-1)/nPts];
+          blueToCyan(n,:) = [0,(n-1)/nPts,1];
+          cyanToWhite(n,:) = [(n-1)/nPts,1,1];  % [1 1 1]...[0 .5 .5];
+        end
+        clrmap = cat(1,blackToBlue,blueToCyan,cyanToWhite);
     
         
       case 'blackHotCold'

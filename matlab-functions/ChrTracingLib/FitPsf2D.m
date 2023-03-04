@@ -109,8 +109,8 @@ for i = 1:nPts
         % resRatio(i) = resnorm/a(i)^2;
     %---------------------------------------------------------------------%
     elseif strcmp(pars.method,'fit')
-        ftype = fittype('exp(-((x-mu_x)/(2*sigma_x)).^2-((v-mu_y)/(2*sigma_y)).^2 )*a/(2*pi*sigma_x*sigma_y)+b',...
-                        'coeff', {'a','mu_x','sigma_x','mu_y','sigma_y','b'},'ind',{'x','v'}); 
+        ftype = fittype('exp(-((x-mu_x)/(2*sigma_x)).^2-((v-mu_y)/(2*sigma_y)).^2 )*a +b',...
+                        'coeff', {'a','mu_x','sigma_x','mu_y','sigma_y','b'},'ind',{'x','v'});   % a = a/(2*pi*sigma_x*sigma_y)
 
         % dataTest = a0*exp(-((X-mu_x0-1.3)/(2*sigma_x0+3)).^2-((Y-mu_y0+.25)/(2*sigma_y0+.5)).^2 )+b0;
         fit_2d = fit([Y(:),X(:)],double(data_2d(:)),ftype,'StartPoint',[a0 mu_x0 sigma_x0 mu_y0 sigma_y0 b0],...

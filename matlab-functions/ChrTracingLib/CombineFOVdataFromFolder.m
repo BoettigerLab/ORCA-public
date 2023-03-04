@@ -12,7 +12,9 @@ defaults(end+1,:) = {'filterFids','fraction',0};
 defaults(end+1,:) = {'datTables','freeType',{}};
 defaults(end+1,:) = {'mosaicPars','freeType',[]};
 defaults(end+1,:) = {'selectFOV','freeType',[]};
+defaults(end+1,:) = {'subFolders','boolean',true};
 % TableToDistMap pars
+defaults(end+1,:) = {'bins','integer',0}; % fixed matrix size rather than auto determine 
 defaults(end+1,:) = {'impute','boolean',false}; % don't use
 defaults(end+1,:) = {'removeEmpty','boolean',true};
 defaults(end+1,:) = {'byHybe','boolean',true};
@@ -34,7 +36,11 @@ pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 % find files 
 if isempty(pars.datTables)
-    datTables = FindFileInSubFolders(dataFolder,'*_AllFits.csv');
+    if pars.subFolders
+        datTables = FindFileInSubFolders(dataFolder,'*_AllFits.csv');
+    else
+        datTables =strcat(dataFolder, cellstr(ls( [dataFolder,'*_AllFits.csv']) ));
+    end
     if isempty(datTables)
         datTables =strcat(dataFolder, cellstr(ls( [dataFolder,'*_AllFits.csv']) ));
     end
@@ -71,6 +77,20 @@ goodTables = true(1,nFOV);
 for f=selectFOV % f=5
     if ischar(datTables{f})
         imTables{f} = readtable(datTables{f});
+        % Fix buggy datasets that don't have the FOV recorded
+        [~,tabName] = fileparts(datTables{f});
+        fovNum = str2double(tabName(4:6));
+        tabFOV = imTables{f}.fov(1);
+        if tabFOV~=fovNum
+            newTab = imTables{f};
+            newTab.fov = fovNum*ones(height(newTab),1);
+            newTab.fs = CantorPair(newTab.fov,newTab.s);
+            newTab.fsr = CantorPair(newTab.fs,newTab.readout);
+            imTables{f} = newTab;
+            writetable(newTab,datTables{f});
+            display(['updated fov number in table ',datTables{f}]);
+        end
+        
     else
         imTables{f} = datTables{f};
     end
@@ -79,10 +99,9 @@ for f=selectFOV % f=5
     else
         
         % Filter the data based on brightness before further analysis
-        if pars.filterFids % remove x% dimest fiducials. 
-         sel = imTables{f}.hybe==1;
-         cut = quantile(imTables{f}.fid_h(sel),pars.filterFids);
-         sel = imTables{f}.hybe==1 & imTables{f}.fid_h < cut;
+        if pars.filterFids % remove x% dimest fiducials.
+         cut = quantile(imTables{f}.fid_h,pars.filterFids);
+         sel =  imTables{f}.fid_h < cut;
          imTables{f}(sel,:) = [];
         end
         if pars.filterReads % remove x% dimest reads among all spots that had that read

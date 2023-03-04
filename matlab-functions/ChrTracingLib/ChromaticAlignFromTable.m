@@ -14,12 +14,13 @@
 % dimensional / more accurate neural net representation of chromatic
 % distortion?  
 % 
+% ----------------- Updates ----------------------------------------
+% 2020-12-09: revised to use automatic detection of replicate hybs based on
+% the labels for readout and channel.  Any readout which is detected in
+% both directions will be used. 
 % -----------------------------------------------------------------
 % Alistair Boettiger
 % CC BY Jan 2019
-
-
- 
 
 defaults = cell(0,3);
 % local parameters
@@ -30,7 +31,7 @@ defaults(end+1,:) = {'minHeightOt','nonnegative',0};
 defaults(end+1,:) = {'chnColors','colormap',hsv(3)};
 defaults(end+1,:) = {'polyOrder','integer',2};
 defaults(end+1,:) = {'showPlots','boolean',true};
-defaults(end+1,:) = {'max2D','nonnegative',350}; % in nm 
+defaults(end+1,:) = {'max2D','nonnegative',500}; % in nm 
 defaults(end+1,:) = {'max3D','nonnegative',0}; % in nm
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
@@ -44,16 +45,12 @@ end
 if iscell(chns)
     spotTable.chn = cellfun(@str2double,chns);
 end
-
- spotTable.dataType( strcmp(spotTable.dataType,'S')) = 'A';
-
 datChns = unique(spotTable.chn);
-otherChns = datChns(datChns ~= pars.refChn);
-isAlign = strcmp(spotTable.dataType,'A'); % find align hybes
-if sum(isAlign)==0
-    error('no hybes designated as "A" or "S" for alignment / color-swap');
+if ~any(datChns == pars.refChn)
+    disp('data channels: '); disp(datChns); 
+    error(['refChn ', num2str(pars.refChn), ' not found in channel list']);
 end
-origReads = unique(spotTable.readout(isAlign)); % find which readouts were imaged in the align hybes
+otherChns = datChns(datChns ~= pars.refChn);
 nChns = length(otherChns);
 
 % this is where the chromatic shifts will be saved
@@ -65,44 +62,34 @@ tforms = cell(nChns,1);
 for c=1:nChns % loop over all non-reference colors
     % Match images of the same spot taken in different colors
     otChn = otherChns(c);
-    pOther = cell(length(origReads),1);
-    pRef = cell(length(origReads),1);
-    for r=1:length(origReads)
-        isO = spotTable.readout==origReads(r) & strcmp(spotTable.dataType,'H');
-        isA = spotTable.readout==origReads(r) & strcmp(spotTable.dataType,'A');
-        isOt = (isA | isO) &  spotTable.chn==otChn; % rpt spots from read r in the 561 chn
-        isRef = (isA | isO) & spotTable.chn==pars.refChn; % rpt spots from read r in the 647 chn
-        pOther{r} = ...
-            [spotTable.x(isOt)+spotTable.locusX(isOt),...
-            spotTable.y(isOt)+spotTable.locusY(isOt),...
-            spotTable.z(isOt),...
-            spotTable.h(isOt),...
-            spotTable.fsr(isOt)]; 
-            % CantorPair(spotTable.readout(isOt),spotTable.s(isOt))];
-        pRef{r} = ...
-            [spotTable.x(isRef)+spotTable.locusX(isRef),...
-            spotTable.y(isRef)+spotTable.locusY(isRef),...
-            spotTable.z(isRef),...
-            spotTable.h(isRef),...
-            spotTable.fsr(isRef)];
-            % CantorPair(spotTable.readout(isRef),spotTable.s(isRef))];
+    tempTable = spotTable ; % ( comboTable.fov==f,:);
+    nReads = max(tempTable.readout);
+    % scan for color swap readouts
+    xyzRefs = cell(nReads,1);
+    xyzAlts = cell(nReads,1);
+    for r=1:nReads  % r =4; %  r=6
+        r1c1 = tempTable.readout== r & tempTable.chn == pars.refChn;
+        r1c2 = tempTable.readout== r & tempTable.chn == otChn;
+        if sum(r1c1) > 0 && sum(r1c2) > 0 % we have a color correct chn
+           c1Table = tempTable(r1c1,:);
+           c2Table = tempTable(r1c2,:);
+           [fsrUsed,ia,ir] = intersect(c2Table.fs,c1Table.fs); % match spots by FOV and spot number
+           xyzRefs{r} = c1Table{ir,1:3} + [c1Table.locusX(ir),c1Table.locusY(ir),0*ir];
+           xyzAlts{r} = c2Table{ia,1:3} + [c2Table.locusX(ia),c2Table.locusY(ia),0*ia];     
+           % [tform3D,~,fixDist] = Polymap3D(xyzRefs{r},xyzAlts{r},'figDist',r,'figMap',r+1);
+           % pause();
+        end
     end
-    pOther = cat(1,pOther{:});
-    pRef = cat(1,pRef{:});
-    % a little filtering 
-    pOther(pOther(:,4) < pars.minHeightOt,:) = [];
-    pRef(pRef(:,4) < pars.minHeightRef,:) = [];   
-    [~,io,ir] = intersect(pOther(:,5),pRef(:,5));
-    xyzRef = pRef(ir,1:3);
-    xyzWarp = pOther(io,1:3);
-    fsrUsed = pRef(ir,5); %fsr indicies
     
-    
-    % COMPUTE Shift 
-    [tform3D,~,fixDist] = Polymap3D(xyzRef,xyzWarp,'parameters',pars);
-    tforms{c} = tform3D;
-    % add chromatic shifts to data table 
-    spotTable = ApplyShiftToTable(spotTable,otChn,tform3D);
+    a = cat(1,xyzRefs{:});
+    b = cat(1,xyzAlts{:});
+    if ~isempty(a) && ~isempty(b)
+        [tform3D,~,fixDist] = Polymap3D(a,b,'parameters',pars);
+        spotTable = ApplyShiftToTable(spotTable,otChn,tform3D);
+        tforms{c} = tform3D; 
+    else
+        error('no matches found to align with');
+    end
 
     % this is now a function
 %     %% ======= Save chromatic shifts to data table =======% 

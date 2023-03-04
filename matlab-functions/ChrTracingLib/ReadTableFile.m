@@ -13,6 +13,7 @@ defaults(end+1,:) = {'scratchFolder','string',scratchPath};
 defaults(end+1,:) = {'overwrite','boolean',true};
 defaults(end+1,:) = {'preview','boolean',true};
 defaults(end+1,:) = {'verbose','boolean',false};
+defaults(end+1,:) = {'delimiter',{' ','\t'},'\t'};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 [~,object,~] = fileparts(filename);
@@ -21,7 +22,7 @@ if exist(txtFile,'file') && pars.overwrite
     delete(txtFile);
 end
 [status,cmdout] = system(['copy ',filename,' ',txtFile]); %#ok<ASGLU>  % supresses file copied output
-ztable = readtable(txtFile);
+ztable = readtable(txtFile,'Delimiter',pars.delimiter);
 
 if pars.preview
     zmax = min(4,height(ztable));

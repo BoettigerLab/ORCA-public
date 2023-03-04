@@ -16,24 +16,36 @@ global scratchPath
 defaults = cell(0,3);
 defaults(end+1,:) = {'folder', 'string', scratchPath}; % 
 defaults(end+1,:) = {'daxName', 'string', 'temp'}; % (leave off .dax)
+defaults(end+1,:) = {'saveFullName','string',''};
 defaults(end+1,:) = {'verbose', 'boolean', true}; % 
 defaults(end+1,:) = {'dataType','string','little endian'};
-parameters = ParseVariableArguments(varargin, defaults, mfilename);
+defaults(end+1,:) = {'infoFile','struct',[]};
+defaults(end+1,:) = {'confirmOverwrite','boolean',true};
+defaults(end+1,:) = {'xmlFile','struct',[]};  % [still need to write this] - optionally create an dax-xml file that can be read by LoadDax  
+pars = ParseVariableArguments(varargin, defaults, mfilename);
+
+
+if ~isempty(pars.saveFullName)
+    [pars.folder,pars.daxName] = fileparts(pars.saveFullName);
+end
+% enforce filepath ends with filesep
+if ~strcmp(pars.folder(end),filesep)
+    pars.folder =[pars.folder,filesep];
+end
 
 % enforce no 'dax' in the inf name
-parameters.daxName = regexprep(parameters.daxName,'.dax','');
-
+pars.daxName = regexprep(pars.daxName,'.dax','');
 [yDim,xDim,nFrames] = size(dax); 
 
-                 infoFile.localName= [parameters.daxName,'.inf'];
-                 infoFile.localPath= parameters.folder;
+                infoFile.localName= [pars.daxName,'.inf'];
+                infoFile.localPath= pars.folder;
                   infoFile.uniqueID= 0; % 7.3616e+05;
                       infoFile.file= '';
               infoFile.machine_name= 'matlab-storm';
            infoFile.parameters_file= '';
              infoFile.shutters_file= '';
                   infoFile.CCD_mode= 'frame-transfer';
-                 infoFile.data_type= ['16 bit integers (binary, ',parameters.dataType,')'];
+                 infoFile.data_type= ['16 bit integers (binary, ',pars.dataType,')'];
           infoFile.frame_dimensions= [xDim,yDim]; %[yDim xDim];
                    infoFile.binning= [1 1];
                 infoFile.frame_size= xDim*yDim;
@@ -59,5 +71,19 @@ parameters.daxName = regexprep(parameters.daxName,'.dax','');
                   infoFile.scalemin= 100;
                      infoFile.notes= '';
                      
- WriteDAXFiles(dax,infoFile,'verbose',parameters.verbose);
+if ~isempty(pars.infoFile)   
+    valuesIn = fields(pars.infoFile);
+    for v=1:length(valuesIn)
+        infoFile.(valuesIn{v}) = pars.infoFile.(valuesIn{v});
+    end    
+end
+% these parameters must match the file
+infoFile.localName= [pars.daxName,'.inf'];
+infoFile.localPath= pars.folder;
+infoFile.frame_dimensions= [xDim,yDim]; %[yDim xDim];
+infoFile.frame_size= xDim*yDim;
+infoFile.number_of_frames= nFrames;
+infoFile.hend= xDim;
+infoFile.vend= yDim;
+WriteDAXFiles(dax,infoFile,'verbose',pars.verbose,'confirmOverwrite',pars.confirmOverwrite);
  

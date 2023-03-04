@@ -173,10 +173,12 @@ CT{handles.id}.parsFovOverlay  = ParseVariableArguments([],defaults,'ChrTracer3_
 
 % Select Spots ----------------------------------------------%
 defaults = cell(0,3);
-defaults(end+1,:) = {'fov','integer',1};
-defaults(end+1,:) = {'imContrastHigh','fraction',0.9995};
-defaults(end+1,:) = {'imContrastLow','fraction',0.5};
-CT{handles.id}.parsSelectSpots = ParseVariableArguments([],defaults,'ChrTracer_SelectSpots');
+defaults(end+1,:) = {'dataType',{'fiducial','data','all'},'fiducial'}; % changed from 'data'
+defaults(end+1,:) = {'hybNumber', 'integer', 1};  
+defaults(end+1,:) = {'fov', 'integer', 1};  
+defaults(end+1,:) = {'dataChannel', 'integer', inf}; % 
+defaults(end+1,:) = {'daxRootDefault', 'string', 'ConvZscan*.dax'}; 
+CT{handles.id}.parsSelectSpots = ParseVariableArguments([],defaults,'Select Spots');
 
 
 % Crop Spots ----------------------------------------------%
@@ -199,12 +201,13 @@ defaults(end+1,:) = {'keepBrightest','integer',1};  % Max number of peaks to all
 defaults(end+1,:) = {'maxXYstep','positive',8}; % box radius in pixels -- was 5  
 defaults(end+1,:) = {'maxZstep','positive',12}; % box radius in pixels  -- was 7
 defaults(end+1,:) = {'datMinSep', 'nonnegative', 3};
-defaults(end+1,:) = {'datMinPeakHeight', 'positive', 500};
+defaults(end+1,:) = {'datMinPeakHeight', 'positive', 200};
 % Common Fid Fitting pars
 defaults(end+1,:) = {'fidMinPeakHeight', 'positive', 200};
 defaults(end+1,:) = {'maxXYdrift','positive',4};
 defaults(end+1,:) = {'maxZdrift','positive',6};
 defaults(end+1,:) = {'upsample','positive',4};  % 8 for accuracy 2 for speed
+defaults(end+1,:) = {'upsampleZ','positive',4};
 % Less common Fiducial fitting defaults
 defaults(end+1,:) = {'fidMinSep', 'nonnegative', 5};  % Min separation between peaks in pixels.  Closer than this will be averaged
 defaults(end+1,:) = {'fidKeepBrightest','integer',1};  % Max number of peaks to allow
@@ -227,6 +230,8 @@ CT{handles.id}.parsFit = ParseVariableArguments([],defaults,'ChrTracer_FitSpots'
 
 % Select All Spots -----------------------
 defaults = cell(0,3);
+defaults(end+1,:) = {'Tool',{'SpotSelector','Cellpose'},'SpotSelector'};
+% these get passed forward to the SpotSelector spot selector
 defaults(end+1,:) = {'autoSelectThreshold','fraction',.997};
 defaults(end+1,:) = {'autoSelectDownsample','positive',3};
 defaults(end+1,:) = {'coarseBackgroundSize','nonnegative',50}; % 50
@@ -275,7 +280,7 @@ CT{handles.id}.stepDirs = {...
 'Click "Select Spots" to auto-ID spots.  Click "Step Pars" to change fitting parameters for selection.';
 'Click "Step Pars" to select the number of a spot to plot, and adjust crop-box size (see figure from "Select Spots" step). Then click "Crop Spots".';
 'Click "Step Pars" to adjust fit thresholds and fit parameters. Then click "Fit Spots".';
-'Click "Step Pars" to specify FOV to process. Click "Select All Spots" to process first FOV. Click "Next Step" to record data for current FOV and advance to next.';
+'Click "Step Pars" and select Tool as "Cellpose" or "SpotSelector".  "Cellpose" will repopulate the parameters after you click "Select All Spots", and you can use the "Step Pars" to change number of spots per cell or image source. Tool SpotSelector will launch another GUI to process each ROI';
 'Click "Fit All" to apply current fitting parameters to all FOV.'
 };
 
@@ -308,7 +313,7 @@ if strcmp(currStepName,'Load Ex. Table')
         end
         % setup next step
         CT{handles.id}.parsFixDrift.selectFOVs = pars.selectFOVs; % carry forward 
-        
+        CT{handles.id}.parsSelectSpots.daxRootDefault = CT{handles.id}.parsLoadExpTable.daxRootDefault;
         
 %---------------------------- Fix Global Drift --------------------------%    
 elseif strcmp(currStepName,'Fix Global Drift')
@@ -334,16 +339,14 @@ elseif strcmp(currStepName,'Validate Drift Fix')
 %---------------------------- SELECT SPOTS ---------------------------------%
 elseif strcmp(currStepName,'Select Spots') % SELECT ROI
     pars = CT{handles.id}.parsSelectSpots;
-    pars.showPlots = true; % required 
-    pars.numberSpots = true; % required
-    pars.refHyb = CT{handles.id}.parsFixDrift.refHybe;
-    pars.eTableXLS = CT{handles.id}.expTableXLS;    
     CT{handles.id}.currFOV = pars.fov;
-    % ------- Manually select a spot--------------
-    im = LoadDaxFromEtable(pars.eTableXLS,...
-                    'dataType','fiducial',...
-                    'fov',pars.fov,...
-                    'hybNumber',pars.refHyb);
+    
+     imHybs = LoadDaxFromEtable(CT{handles.id}.expTableXLS,...
+                    'parameters',pars,...
+                    'fixDrift',true,...
+                    'driftFolder',CT{handles.id}.saveFolder,...
+                    'simplifyOutput',false);
+    im = max(cat(3,imHybs{:}),[],3); %  figure(9); clf; imagesc(im);
     CT{handles.id}.lociXY = ChrTracer3p2_ManualSelectSpot(im);
     %--------------------------------------------------
     % % Auotmated selection of spots
@@ -378,15 +381,30 @@ elseif strcmp(currStepName,'Fit Spots')
     pars.eTable = CT{handles.id}.eTable;  
     pars.lociXY = CT{handles.id}.lociXY;
     pars.veryverbose = true;
+    if isfield(CT{handles.id},'fitMethod')
+        if strcmp(CT{handles.id}.fitMethod,'multiFit')
+            spotTableTemp = ChrTracer3_MultiFitSpots(CT{handles.id}.fidSpots,CT{handles.id}.dataSpots,s,'parameters',pars,'veryverbose',true);
+        else
+            spotTableTemp = ChrTracer3_FitSpots(CT{handles.id}.fidSpots,CT{handles.id}.dataSpots,s,'parameters',pars,'veryverbose',true);
+        end
+    else
     spotTableTemp = ChrTracer3_FitSpots(CT{handles.id}.fidSpots,CT{handles.id}.dataSpots,s,'parameters',pars,'veryverbose',true);
+    end
     CT{handles.id}.spotTableTemp = spotTableTemp;
 
 
 %------------------------ SELECT ALL SPOTS -------------------------------%
 elseif strcmp(currStepName,'Select All Spots') 
-% Fit all spots
-    ChrTracer_SpotSelector('id',handles.id);
-   
+    pars = CT{handles.id}.parsSelectAllSpots;
+    switch pars.Tool
+       case 'SpotSelector'
+    % Fit all spots
+        ChrTracer_SpotSelector('id',handles.id); % this launches its own GUI
+       case 'Cellpose'
+           % this uses the ChrTracer3 GUI
+        pars = ChrTracer3_SegmentSpotsPerNucleus(CT{handles.id}.expTableXLS,'analysisFolder',CT{handles.id}.saveFolder,'parameters',pars);
+        CT{handles.id}.parsSelectAllSpots = pars;
+    end
 
 %-------------------------- FIT ALL ---------------------------------%
 elseif strcmp(currStepName,'Fit All') 
@@ -436,15 +454,38 @@ elseif strcmp(currStepName,'Fit All')
                                     'fov',f); 
 
                 % fit spots
-                spotDataTable = ChrTracer3_FitAllSpots(...
-                    CT{handles.id}.fidiSpots,CT{handles.id}.dataSpots,...
-                    'parameters',parsFit,...
-                    'eTable',CT{handles.id}.eTable,...
-                    'numParallel',pars.numParallel,... 
-                    'lociXY',spotXY,...
-                    'showPlots',false,...
-                    'fov',f); % 
-
+                doMultiFit = false;
+                if isfield(CT{handles.id},'fitMethod')
+                    if strcmp(CT{handles.id}.fitMethod,'multiFit')
+                        doMultiFit = true;
+                     end
+                end
+                if doMultiFit 
+                    saveFits = [saveFolder,'fitResults\'];
+                    if ~exist(saveFits,'dir')
+                        mkdir(saveFits);
+                    end
+                    spotDataTable = ChrTracer3_MultiFitAllSpots(...
+                        CT{handles.id}.fidiSpots,CT{handles.id}.dataSpots,...
+                        'parameters',parsFit,... % 
+                        'eTable',CT{handles.id}.eTable,...
+                        'numParallel', pars.numParallel,... 
+                        'lociXY',spotXY,...
+                        'showPlots',false,... % need to override the showPlots parameters pas from the ParsFit  
+                        'fov',f,...
+                        'saveData',true,...
+                        'saveFolder',saveFits); % 
+                else
+                    spotDataTable = ChrTracer3_FitAllSpots(...
+                        CT{handles.id}.fidiSpots,CT{handles.id}.dataSpots,...
+                        'parameters',parsFit,...
+                        'eTable',CT{handles.id}.eTable,...
+                        'numParallel',pars.numParallel,... 
+                        'lociXY',spotXY,...
+                        'showPlots',false,...
+                        'fov',f); % 
+                end
+                
                 % save data table
                 writetable(spotDataTable,tableSaveName);
                 disp(['wrote ',tableSaveName]);
@@ -804,9 +845,10 @@ function RemoveLocus(hObject,eventdata,handles)
 %=============================================================
 
 % ------------------------------------------------------------------
-% NOT sure if this is still active:
+% This is actually now "ExperimentTable" rather than Text folder
 function EditTextFolder_Callback(hObject, eventdata, handles) %#ok<*INUSD>
-
+global CT 
+CT{handles.id}.expTableXLS = get(handles.EditTextFolder,'String'); 
 
 % --- Executes during object creation, after setting all properties.
 function EditTextFolder_CreateFcn(hObject, eventdata, handles)

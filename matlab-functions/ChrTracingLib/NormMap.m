@@ -2,10 +2,11 @@ function [imOut,norm] = NormMap(imIn,varargin)
 % imOut - normalized relative to median distance of each n-diag
 
 defaults = cell(0,3);
-defaults(end+1,:) = {'start','integer',4}; % not used
-defaults(end+1,:) = {'stop','integer',8}; % not used
-defaults(end+1,:) = {'method',{'square','diag'},'diag'};
+defaults(end+1,:) = {'method',{'square','diag','powerlaw'},'diag'};
 defaults(end+1,:) = {'max','positive',inf};
+defaults(end+1,:) = {'power','float',-1}; % only used in powerlaw
+defaults(end+1,:) = {'stat',{'median','mean'},'median'}; % only used in 'diag'
+
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 if strcmp(pars.method,'diag')
@@ -14,11 +15,28 @@ if strcmp(pars.method,'diag')
     norm = ones(nHybes-1,1);
     normMap = zeros(size(imIn));
     for r=1:min(nHybes-1, pars.max)
-        norm(r)  = nanmedian(diag(imIn,r));
+        if strcmp(pars.stat,'median')
+            norm(r)  = nanmedian(diag(imIn,r));
+        elseif strcmp(pars.stat,'mean')
+            norm(r)  = nanmean(diag(imIn,r));
+        end
+        if ~isnan(norm(r))
+        selMap = boolean(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
+        normMap =normMap+ norm(r)*double(selMap);
+        end
+    end
+    imOut = normMap; 
+
+elseif strcmp(pars.method,'powerlaw')
+    nHybes= size(imIn,1);
+    norm = ones(nHybes-1,1);
+    normMap = eye(nHybes);
+    for r=1:min(nHybes-1, pars.max)
+        norm(r)  = r^pars.power;
         selMap = boolean(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
         normMap =normMap+ norm(r)*double(selMap);
     end
-    imOut = normMap; 
+    imOut = normMap *sum(imIn(:))/sum(normMap(:)); 
 
 else
     % original behavior, no longer default

@@ -11,14 +11,16 @@ function [probeFasta,targetRegions,probeSets,cuts] = FastaToSeqProbes(regionFast
 % changed secondary source file to user Adapters1 file
 % 
 % Install Notes
-
+% 
+% currReadouts = 'C:\Data\Oligos\CommonOligos\Adapters1_readouts001-384.fasta' % introduced ~6/30/20 
+currReadouts = 'C:\Data\Oligos\CommonOligos\v2_Adapters1_readouts001-384.fasta';  % introduced 9/30/20 
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'verbose', 'boolean', true}; 
 defaults(end+1,:) = {'veryVerbose', 'boolean', false}; 
 defaults(end+1,:) = {'fwdPrimers', 'fasta', fastaread('C:\Data\Oligos\CommonOligos\FwdPrimers.fasta')}; % FwdPrimers
 defaults(end+1,:) = {'revPrimers', 'fasta', fastaread('C:\Data\Oligos\CommonOligos\RevPrimers.fasta')}; % RevPrimers
-defaults(end+1,:) = {'secondaries', 'fasta', fastaread('C:\Data\Oligos\CommonOligos\Adapters1_readouts001-384.fasta')}; % ReadoutSeqs
+defaults(end+1,:) = {'secondaries', 'fasta', fastaread(currReadouts)}; % ReadoutSeqs
 defaults(end+1,:) = {'commonRT', 'string', 'catcaacgccacgatcagct'};  % 20 bp complimentary to P4-405 end. 
 defaults(end+1,:) = {'repeatFasta', 'string', ''}; 
 defaults(end+1,:) = {'genomeOffTarget','string',''};
@@ -49,6 +51,7 @@ defaults(end+1,:) = {'parallel','integer',1};
 defaults(end+1,:) = {'noOverlap','boolean',true}; % minimize overlap based on threePrime space (if false returns all probes)
 defaults(end+1,:) = {'threePrimeSpace','float',0}; % add extra space between probes or remove space between probes. 
 defaults(end+1,:) = {'showCuts','boolean',false}; % For troubleshooting probe loss.
+defaults(end+1,:) = {'fiducialNoTruncate','integer',0}; % For troubleshooting probe loss.
 % -------------------------------------------------------------------------
 % Parse necessary input
 % -------------------------------------------------------------------------
@@ -76,12 +79,13 @@ if ~contains(fastaHeader{1},'gene=')
     for i=1:nEntries
         currName = regionFastaData(i).Header;
         regionFastaData(i).Header = ['',' gene=',currName];
-        maxLength = parameters.probeLength*parameters.maxProbesPerRegion*2;
+        maxLength = parameters.probeLength*parameters.maxProbesPerRegion*10;  % just a compute failsafe  (was 2). truncation to max probes happens later
         if length(regionFastaData(i).Sequence) > maxLength
            regionFastaData(i).Sequence = regionFastaData(i).Sequence(1:maxLength); 
         end
     end
 end
+
 
 try
     genomeObject = Transcriptome(regionFastaData,'verbose',false);
@@ -184,13 +188,14 @@ insufficientProbe = [targetRegions.numRegions] < parameters.minProbesPerRegion;
 
 
 %%
+nP = min([25,length(regionFastaData)]);
 if parameters.showCuts
     figure(3); clf; figure(4); clf;
     tm = gtrDesigner.GetRegionTm(parameters.probeLength);
     gc = gtrDesigner.GetRegionGC(parameters.probeLength);
     kept = indsToKeep;
     pens = gtrDesigner.penalties; % off targetFasta
-    for i=1:min(25,length(regionFastaData))
+    for i=1:nP
         numCuts = length(pens)+5;
         numBases = length(regionFastaData(i).Sequence);
         cuts = zeros(numCuts,numBases);
@@ -204,19 +209,19 @@ if parameters.showCuts
         cuts(p+4,1:length(tm{i})) = tm{i}<min(parameters.TmRange);
         cuts(p+5,1:length(tm{i})) = tm{i}>max(parameters.TmRange);  
 
-        figure(3); subplot(5,5,i); 
+        figure(3); subplot(nP/5,5,i); 
         for c=1:numCuts
             plot(.5*c+c+cuts(c,:),'.'); hold on;
         end
         plot(kept{i});
         title(1-sum(sum(cuts,1)>0)/numBases);
 
-        figure(4);  subplot(5,5,i); 
-        plot(sum(cuts,1)); hold on;
+        figure(4);  subplot(nP/5,5,i); 
+        plot(sum(cuts,1)); hold on; ylabel('excluded regions');
         if ~isempty(targetRegions(i).startPos)
             plot(targetRegions(i).startPos,3,'k.');
         end
-        plot(kept{i}); title(sum(kept{i})/numBases)
+        plot(kept{i}); title(['frac bases kept=',num2str(sum(kept{i})/numBases)]);
     end
     figure(3); 
     legend('non-spec','gc-min','gc-max','tm-min','tm-max','kept')
@@ -245,8 +250,9 @@ end
 %  targetRegions(r).sequence property is read-only
 numDomains = length(targetRegions); % total number of regions to build probes for.
 targetSeqs = cell(numDomains,1);
-targetNumRegions = zeros(length(targetRegions),1);
-for r=1:length(targetRegions)
+targetNumRegions = zeros(numDomains,1);
+
+for r= 1:numDomains
     targetSeqs{r} = targetRegions(r).sequence';
     maxProbes = parameters.maxProbesPerRegion;
     if targetRegions(r).numRegions > parameters.maxProbesPerRegion
@@ -254,12 +260,14 @@ for r=1:length(targetRegions)
            disp(['truncating extra probes from region ',...
                targetRegions(r).geneName]);
         end
-        if parameters.truncateUniform
-            nSeqs = length(targetSeqs{r});
-            selSeqs = sort(randperm(nSeqs,maxProbes));
-            targetSeqs{r} = targetSeqs{r}(selSeqs);
-        else 
-            targetSeqs{r} = targetSeqs{r}(1:maxProbes);
+        if r ~= parameters.fiducialNoTruncate
+            if parameters.truncateUniform
+                nSeqs = length(targetSeqs{r});
+                selSeqs = sort(randperm(nSeqs,maxProbes));
+                targetSeqs{r} = targetSeqs{r}(selSeqs);
+            else 
+                targetSeqs{r} = targetSeqs{r}(1:maxProbes);
+            end
         end
     end
     targetNumRegions(r) = length(targetSeqs{r});
@@ -330,6 +338,7 @@ probeSets(1).target = '';
 probeSets(1).readout = '';
 probeSets(1).numReadouts = 0;
 s = 0; % secondary counter
+try
 for k=1:numDomains
     s = s+1;
     r = ceil(s/parameters.numCompete);
@@ -391,6 +400,11 @@ for k=1:numDomains
     if sum(cellfun(@isempty,targetSeqs{r})) > 0
         error('sequence missing')
     end
+end
+
+catch er
+   warning(er.getReport);
+   disp('put debug point here');
 end
 
 if parameters.verbose

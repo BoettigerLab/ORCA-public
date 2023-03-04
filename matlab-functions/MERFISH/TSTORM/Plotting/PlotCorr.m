@@ -12,7 +12,7 @@ function pearsonCorr = PlotCorr(x,y,varargin)
 % Default variables
 % -------------------------------------------------------------------------
 defaults = cell(0,3);
-defaults(end+1,:) = {'MarkerSize', 'positive', 10};
+defaults(end+1,:) = {'MarkerSize', 'positive', 1};
 defaults(end+1,:) = {'FontSize', 'positive', 6};
 defaults(end+1,:) = {'colorMap', 'colormap', 'jet'};
 defaults(end+1,:) = {'color', 'colormap', [0,0,0]};

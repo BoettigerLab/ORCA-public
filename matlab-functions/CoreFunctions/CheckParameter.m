@@ -94,7 +94,7 @@ for i=1:length(type)
                 error([name ' is not a boolean']);
             end
         case 'string'
-            if ~ischar(value)
+            if ~ischar(value) && ~isstring(value)
                 error([name ' is not a string']);
             end
         case 'filePath'
@@ -138,7 +138,7 @@ for i=1:length(type)
                 error([name 'is not a float']); 
             end
         case 'parallel'
-            if ~strcmp(class(value), 'parallel.Pool')
+            if ~contains(class(value), 'parallel')
                 error([name ' is not a parallel.Pool object']);
             end
         case 'fasta'

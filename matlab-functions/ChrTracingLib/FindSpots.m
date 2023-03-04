@@ -6,6 +6,8 @@ defaults(end+1,:) = {'autoSelectThreshold','fraction',.992};
 defaults(end+1,:) = {'autoSelectDownsample','positive',3};
 defaults(end+1,:) = {'autoSelectSigma','positive',3};
 defaults(end+1,:) = {'bkdFilterScale','nonnegative',10};
+defaults(end+1,:) = {'showPlot','boolean',false};
+defaults(end+1,:) = {'MarkerSize','positive',10};
 
 % parse variable arguments
 pars = ParseVariableArguments(varargin, defaults, mfilename);
@@ -34,3 +36,9 @@ end
 bw = imregionalmax(mask);                            %    figure(12); imagesc(bw);
 [y,x] = ind2sub(size(mask),find(bw>0));
 spots = round(pars.autoSelectDownsample*[x,y] - pars.autoSelectDownsample/2);
+
+if nargout == 0 || pars.showPlot
+    % imagesc(im); colormap(gray);
+    hold on; 
+    plot(spots(:,1),spots(:,2),'yo','MarkerSize',pars.MarkerSize);
+end

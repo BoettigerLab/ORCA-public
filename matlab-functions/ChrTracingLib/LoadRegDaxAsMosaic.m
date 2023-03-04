@@ -5,6 +5,12 @@ function [imageTiles,stageXY,pars] = LoadRegDaxAsMosaic(maxNameInHybFov,varargin
 %         assumed to be fiduical data.  There may be multiple data channels
 %         for each fiducial/hyb.  Currently all data channels will be
 %         loaded.
+% FIXME:  maxNames already specify whether they are 'dat' or 'fid' there is
+% no need for assumptions.
+% 
+%
+%
+%
 % Outputs:
 %   nFOV x nChns cell array of image tiles
 %   nFOV x 2 matrix of XY stage positions
@@ -47,7 +53,7 @@ defaults(end+1,:) = {'projectAll','boolean',true}; % show a projection of x,y da
 defaults(end+1,:) = {'smoothBox','positive',1};
 defaults(end+1,:) = {'bkd','freeType',[]}; % map of illumination background
 defaults(end+1,:) = {'camBkd','freeType','auto'}; 
-defaults(end+1,:) = {'backgroundCorrect',{'file','median'},'median'};
+defaults(end+1,:) = {'backgroundCorrect',{'file','median','medianEdge','none','removeData'},'median'};
 pars  = ParseVariableArguments(varargin,defaults,'MosaicBuilder ValidateMosaic');
 
 
@@ -76,27 +82,28 @@ numFovs = min(numFovs,length(fovs));
 % load requested data chns
 % Note: imTiles is nFOV x nChns for MosaicViewer GUI
 
+% if LoadDaxFromEtable was asked for data only, it
 if strcmp(pars.dataType,'data')
-    chns = 2:numDatas;
-    numDatas = numDatas - 1;
-    imTiles = maxNameInHybFov(hybs,fovs,chns);
-    imTiles = reshape(permute(imTiles,[2,3,1]),numFovs,numHybs*numDatas);
+    chns = 1:numDatas; % 2:numDatas;
+    % numDatas = numDatas - 1;
+    imTileNames = maxNameInHybFov(hybs,fovs,chns);
+    imTileNames = reshape(permute(imTileNames,[2,3,1]),numFovs,numHybs*numDatas);
     chns = 1:numHybs*(numDatas); % in the new imTiles strcture, these are the hybs
 elseif strcmp(pars.dataType,'fiducial')
     chns = 1;
     numDatas = 1;
-    imTiles = maxNameInHybFov(hybs,fovs,chns)';
+    imTileNames = maxNameInHybFov(hybs,fovs,1)';
 elseif strcmp(pars.dataType,'all')
     fidTiles = maxNameInHybFov(1,fovs,1)';
     chns = 2:numDatas;
     numDatas = numDatas - 1;
-    imTiles = maxNameInHybFov(hybs,fovs,chns);
-    imTiles = reshape(permute(imTiles,[2,3,1]),numFovs,numHybs*numDatas);
-    imTiles = cat(2,imTiles,fidTiles);
+    imTileNames = maxNameInHybFov(hybs,fovs,chns);
+    imTileNames = reshape(permute(imTileNames,[2,3,1]),numFovs,numHybs*numDatas);
+    imTileNames = cat(2,imTileNames,fidTiles);
     chns = 1:numHybs*(numDatas)+1; % in the new imTiles strcture, these are the hybs
 end
 regDatas = cell(numFovs,1);
-imageTiles = imTiles; 
+imageTiles = imTileNames; 
 % load per-hyb registration data for all FOVs 
 
 for f=fovs
@@ -114,10 +121,10 @@ try
 for h=chns
     disp(['loading tiles from chn ',num2str(h)]);
     if h==chns(1) || isempty(regDatas{1}) || h>length(regDatas{1}) % Load the first hyb
-        [chnTiles,stageXY,pars] = DaxToImageTiles(imTiles(:,h),'parameters',pars);
+        [chnTiles,stageXY,pars] = DaxToImageTiles(imTileNames(:,h),'parameters',pars);
         % this will also load the scope specific parameters 
     else % all other hybs must also be drift corrected
-        chnTiles = DaxToImageTiles(imTiles(:,h),'parameters',pars);
+        chnTiles = DaxToImageTiles(imTileNames(:,h),'parameters',pars);
         for f=fovs
             r = ceil((h-1)/numDatas); % 
             chnTiles{f} =  ApplyReg(chnTiles{f},regDatas{f}(r)); % register tile
@@ -125,7 +132,7 @@ for h=chns
         end
     end
     % Background correction
-    [chnTiles,bkd] = FlattenBackground(chnTiles,'parameters',pars);
+    [chnTiles,bkd] = FlattenBackground(chnTiles,'parameters',pars);   
     % figure(10); clf; imagesc(bkd); colorbar; % for troubleshooting
     % save data
     imageTiles(:,h) = chnTiles;

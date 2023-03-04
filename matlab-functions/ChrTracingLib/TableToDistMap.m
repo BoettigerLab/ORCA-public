@@ -5,6 +5,7 @@ function [distMap,polymer,spotProps] = TableToDistMap(spotTable,varargin)
 % see also: 
 
 defaults = cell(0,3);
+defaults(end+1,:) = {'bins','integer',0};
 defaults(end+1,:) = {'impute','boolean',false};
 defaults(end+1,:) = {'removeEmpty','boolean',true};
 defaults(end+1,:) = {'byHybe','boolean',true};
@@ -30,7 +31,7 @@ if pars.dataBasedDriftCorrect
     % remove fiduical based drift correction
     if quantile(abs(spotTable.xshift),.9) < 100
         % old version in pixels
-       spotTable.x = spotTable.x + spotTable.xshift*154;
+       spotTable.x = spotTable.x + spotTable.xshift*154;  % this was an old table format with shifts recorded in pixels but x,y,z recorded in nm. Now everything is nm 
        spotTable.y = spotTable.y + spotTable.yshift*154;
        spotTable.z = spotTable.z + spotTable.zshift; 
     else
@@ -50,8 +51,23 @@ if strcmp(tableFormat,'chrom')
         distMap = nan(numPanels,numPanels,numSpots);
         polymer = nan(numPanels,4,numSpots);
     elseif strcmp(pars.sortMethod,'byRead')
-        distMap = nan(numReads,numReads,numSpots);
-        polymer = nan(numReads,4,numSpots);
+        % don't assign readout 0 
+        skip = spotTable.readout == 0;
+        spotTable(skip,:) = [];
+        % make space for rpts
+        isRpt = strcmp(spotTable.dataType,'R');
+        rptCodes = unique(spotTable.readout(isRpt));
+        nRpts = length(rptCodes);
+        for r=1:length(rptCodes)
+            isR = spotTable.readout == r & isRpt;
+            spotTable.readout(isR) = numReads + r;
+        end
+        distMap = nan(numReads+nRpts,numReads+nRpts,numSpots);
+        polymer = nan(numReads+nRpts,4,numSpots);       
+    end
+    if pars.bins ~= 0 
+        distMap = nan(pars.bins,pars.bins,numSpots);
+        polymer = nan(pars.bins,4,numSpots);
     end
     
     
@@ -62,16 +78,16 @@ if strcmp(tableFormat,'chrom')
         if strcmp(pars.sortMethod,'byPanel')
             isS1 = spotTable.fs == uids(s) ;% % the readout probe numbers of these spots
         elseif strcmp(pars.sortMethod,'byRead')
-            isS1 = spotTable.fs == uids(s) & strcmp(spotTable.dataType,'H') ; % the readout probe numbers of these spot
+            isS1 = spotTable.fs == uids(s) & (strcmp(spotTable.dataType,'H') | strcmp(spotTable.dataType,'R') ); % the readout probe numbers of these spot
         end      
         if pars.chromCorrect
-            xyzh = [spotTable.x(isS1),spotTable.y(isS1),spotTable.z(isS1),spotTable.h(isS1)]  ...  % +   the drift-corrected (x,y,z) corrdinates
-                -1*[spotTable.xcShift(isS1),spotTable.ycShift(isS1),spotTable.zcShift(isS1),0*spotTable.h(isS1)] ; % chromatic-correction       
-        else
+            xyzh = [spotTable.x(isS1),spotTable.y(isS1),spotTable.z(isS1),spotTable.h(isS1)]  ...  % + -  the drift-corrected (x,y,z) corrdinates
+                +1*[spotTable.xcShift(isS1),spotTable.ycShift(isS1),spotTable.zcShift(isS1),0*spotTable.h(isS1)] ; % chromatic-correction       
+          else
             xyzh = [spotTable.x(isS1),spotTable.y(isS1),spotTable.z(isS1),spotTable.h(isS1)];
         end  
         if strcmp(pars.sortMethod,'byRead')
-            b = spotTable.readout(isS1);     
+            b = spotTable.readout(isS1); 
         elseif strcmp(pars.sortMethod,'byPanel')
             b = spotTable.panel(isS1);
         end
@@ -130,7 +146,7 @@ elseif strcmp(tableFormat,'old')
 elseif strcmp(tableFormat,'new') && ~pars.byHybe  % new format  
     
     numSpots = max(spotTable.s);
-    numReads = max(spotTable.read);
+    numReads = max(spotTable.readout);
     distMap = nan(numReads,numReads,2*numSpots);
     polymer = nan(numReads,4,2*numSpots);
     spotProps = table(zeros(2*numSpots,1),zeros(2*numSpots,1),zeros(2*numSpots,1),zeros(2*numSpots,1),...
@@ -146,7 +162,7 @@ elseif strcmp(tableFormat,'new') && ~pars.byHybe  % new format
            xyzh2 = fillmissing(xyzh2,'linear'); 
         end
         s1 = 2*(s-1)+1;
-        b = spotTable.read(isS1); % the readout probe numbers of these spots
+        b = spotTable.readout(isS1); % the readout probe numbers of these spots
         if length(b) > 1
             polymer(b,:,s1) = xyzh1;
   
@@ -172,7 +188,7 @@ elseif strcmp(tableFormat,'new') && ~pars.byHybe  % new format
             spotProps.s(s1) =  s;
         end
         s2 = 2*s;
-        b = spotTable.read(isS2); % the readout probe numbers of these spots
+        b = spotTable.readout(isS2); % the readout probe numbers of these spots
         if length(b) > 1
             polymer(b,:,s2) = xyzh2;
             lx = spotTable.locusX(isS2);

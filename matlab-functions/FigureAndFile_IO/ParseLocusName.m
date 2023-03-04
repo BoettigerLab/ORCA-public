@@ -32,16 +32,28 @@ locusEnd = zeros(numLoci,1);
 chr = cell(numLoci,1); 
 
 for i = 1:numLoci
+    try
      locusname = regexprep(locustxt{i},' ',''); % remove spaces 
      s = regexp(locusname,':');
-     sep = regexp(locusname,'-|\.\.');
-     if pars.removeChr
-        chr{i} = regexprep(locusname(1:s-1),{'chr','Chr'},{'',''});
+     if ~isempty(s)
+         sep = regexp(locusname,'-|\.\.');
+         if pars.removeChr
+            chr{i} = regexprep(locusname(1:s-1),{'chr','Chr'},{'',''});
+         else
+             chr{i} = locusname(1:s-1);
+         end
+         locusStart(i) = str2double(locusname(s+1:sep-1));
+         locusEnd(i) = str2double(locusname(sep+1:end));
      else
-         chr{i} = locusname(1:s-1);
+         nameparts = strsplit(locusname,',');
+         chr{i} = nameparts{1};
+         locusStart(i) = str2double(nameparts{2});
+         locusEnd(i) = str2double( nameparts{3});
      end
-     locusStart(i) = str2double(locusname(s+1:sep-1));
-     locusEnd(i) = str2double(locusname(sep+1:end));
+    catch er
+        warning(er.message);
+        error(['unable to parse locus name ', locustxt{i}]);
+    end
 end
 
 if ~cellPassed

@@ -20,11 +20,15 @@ function WriteDAXFiles(movie, infoFile, varargin)
 % Alistair Boettiger & Jeffrey Moffitt
 % October 3, 2012
 % jeffmoffitt@gmail.com
+% boettiger.alistair@gmail.com
 %
 % Version 1.0 - Jeff Moffitt
-% Version 1.1 - rewritten to prompt for overwrite. 
+% Version 1.1 - AB rewritten to prompt for overwrite. 
 %    This version is also dependent on the new ParseVariableArguments
 %    helper function for building matlab functions.
+% Version 1.2
+%     Allow a 'saveFullName' to be specified, in place of editing the info
+%     file before passing it here.  
 %--------------------------------------------------------------------------
 
 
@@ -46,13 +50,29 @@ end
 defaults = cell(0,3);
 defaults(end+1,:) = {'verbose','boolean',true};
 defaults(end+1,:) = {'overwrite','boolean',true};
+defaults(end+1,:) = {'saveFolder','string',''};
+defaults(end+1,:) = {'saveName','string',''};
+defaults(end+1,:) = {'saveFullName','string',''};
 defaults(end+1,:) = {'confirmOverwrite','boolean',true};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 verbose = pars.verbose;
 
-%--------------------------------------------------------------------------
+
+%==========================================================================
+
+
+if ~isempty(pars.saveFullName)
+    [pars.saveFolder,pars.saveName] = fileparts(pars.saveFullName);
+end
+if ~isempty(pars.saveName)
+    pars.saveName = regexprep(pars.saveName,'.dax',''); % saveName should not contain a file end
+    infoFile.localName = [pars.saveName,'.dax']; % 
+end 
+if ~isempty(pars.saveFolder)
+    infoFile.localPath = [pars.saveFolder,filesep];
+end
+
 % Create dax name
-%--------------------------------------------------------------------------
 daxName = [infoFile.localName(1:(end-4)) '.dax'];
 
 %--------------------------------------------------------------------------
@@ -61,7 +81,7 @@ daxName = [infoFile.localName(1:(end-4)) '.dax'];
 fileExists = exist([infoFile.localPath daxName],'file');
  
  if fileExists && pars.confirmOverwrite
-    disp('A dax file with this names exists!');
+    disp(['Dax file ',[infoFile.localPath daxName],' exists!']);
     choice = input('overwrite? 1=y,0=n.  ');
     if choice ~= 1 
        pars.overwrite = false; 

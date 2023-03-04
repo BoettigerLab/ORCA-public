@@ -88,7 +88,7 @@ datSpotsAllHybes = cell(numHybes,1);
 
 for h=1:numHybes % parfor this  (doesn't help much, read-speed is limiting)
     dax = ReadDax(rawDataNames{h},'verbose',pars.veryverbose);
-    dax = ApplyReg(dax,regData(h));
+    dax = ApplyReg(dax,regData(h)); % WARNING, translate is 2D or 3D-by plane, rescaling is only 2D
     [numRows,numCols,numZs] = size(dax); %#ok<ASGLU>
   
     fidSpotsInHyb = cell(numSpots,1);
@@ -110,7 +110,7 @@ for h=1:numHybes % parfor this  (doesn't help much, read-speed is limiting)
             datMat(1:size(datMatIn,1),1:size(datMatIn,2),1:size(datMatIn,3)) = datMatIn;
             datSpotsInHyb{s,n} = datMat;
         end    
-%         figure(2); 
+%         figure(2); clf;
 %         subplot(1,2,1); imagesc(max(fidSpotsInHyb{s},[],3)); title('fid');
 %         subplot(1,2,2); imagesc(max(datSpotsInHyb{s,n} ,[],3)); title('dat');
     end
@@ -135,8 +135,13 @@ for s=1:numSpots
           im_fid = fidSpotsAllHybes{h}(s); 
           im_dat = datSpotsAllHybes{h}(s,:);
        end
-      fidiSpots{s}(h) = im_fid;
-      dataSpots{s}(h,:) = im_dat; 
+       try
+          fidiSpots{s}(h) = im_fid;
+          dataSpots{s}(h,:) = im_dat; 
+       catch
+            fidiSpots{s}{h} = im_fid;
+            dataSpots{s}{h,:} = im_dat; 
+       end
    end
 end
 

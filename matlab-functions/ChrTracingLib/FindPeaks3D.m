@@ -31,13 +31,13 @@ warning('off','MATLAB:singularMatrix');
 [rows,cols,stcks] = size(Im1);
 %  THIS doesn't seem right
 wb = min([floor(pars.maxFitWidth/2),floor(rows/2),floor(cols/2)]); % short hand for crop;
-wz = min([floor(pars.maxFitZdepth/2),floor(stcks/2)]); % short hand for crop;
+wz = min([floor(pars.maxFitZdepth/2),floor(stcks/2)])-1; % short hand for crop;
 
 % defaults to maxFitWidth 
-wb = floor(rows/2)-floor(pars.maxFitWidth/2);
+% wb = floor(rows/2)-floor(pars.maxFitWidth/2);
 wb = min([wb,rows,cols]); % threshold at max rows or max cols if wb>rows
 wb = max([0,wb]); % threshold at min of 0
-wz = floor(rows/2)-floor(pars.maxFitZdepth/2);
+% wz = floor(rows/2)-floor(pars.maxFitZdepth/2);
 wz = min([wz,rows,cols]); % threshold at max rows or max cols if wb>rows
 wz = max([0,wz]); % threshold at min of 0
 
@@ -57,6 +57,9 @@ if ~isempty(pars.relativeHeight) && pars.relativeHeight ~= 0
     maxHeight = max(Im3(:));
     bw(Im3< pars.relativeHeight*maxHeight) = 0;
 end
+% figure(100); clf; imagesc(max(Im1,[],3)); colorbar;
+% figure(100); clf; imagesc(max(Im3,[],3)); colorbar;
+% figure(101); clf; imagesc(max(bw,[],3));
 bw(Im3<pars.minPeakHeight) = 0; % only keep peaks above min Threshold
 connMap = bwconncomp(bw);
 

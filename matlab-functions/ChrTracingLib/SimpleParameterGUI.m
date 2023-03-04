@@ -26,6 +26,7 @@ for n=1:nPrompts
     valueBatches{n} = cell2struct(fieldValues(x1:x2),fieldNames(x1:x2));
 end
 
+try
 outputValues = cell(nPrompts,1);
 for n=1:nPrompts
     currentValues = valueBatches{n};
@@ -62,8 +63,12 @@ for n=1:nPrompts
     isLogicalPar(isNotString) = [];
 
     % get user choices (these will be returned as strings)
-    choices = inputdlg(parameterNames,parameters.title,1,parameterValues);
-
+    if ~isempty(parameterNames)
+        choices = inputdlg(parameterNames,parameters.title,1,parameterValues);
+    else
+        choices = [];
+    end
+    
     % parse choices back into the desired formats
     if ~isempty(choices)
         canceled = false;
@@ -99,5 +104,9 @@ newValues = cat(1,newValueCell{:});
 newFields = cat(1,newFieldCell{:});
 newValues = cell2struct(newValues,newFields);
 
-
+catch er
+    warning(er.getReport);
+    disp('debug here');
+end
+    
 

@@ -352,6 +352,8 @@ while nPlaced < nTiles
         end
     catch er
         cprintf([1,0,0],['error at m=',num2str(m), ' tile ',num2str(origIndex(m)) '.']);
+        disp(er.getReport);
+        
         if pars.stopOnError
             disp('place debug to stop here');
             error(er.getReport);

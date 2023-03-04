@@ -23,16 +23,17 @@ elseif ((~isempty(findstr(type,'.dax'))) && (direct))
     %-------------------------------------------------
     % Your function that will open/run this file type
     %-------------------------------------------------
-    disp('reading dax file into global var "daxfile"...');
-    disp(type);
-     daxfile = type;
-     inffile = regexprep(type,'.dax','.inf');  
-    if ~isempty(daxfile)
-       OpenNew = input('Open in new instance of STORMfinder? 1=yes, 0=no:  ');
-       if OpenNew ==1
-            STORMfinder;      
-       end
-    end
+    DaxViewer('daxFile',type);
+%     disp('reading dax file into global var "daxfile"...');
+%     disp(type);
+%      daxfile = type;
+%      inffile = regexprep(type,'.dax','.inf');  
+%     if ~isempty(daxfile)
+%        OpenNew = input('Open in new instance of STORMfinder? 1=yes, 0=no:  ');
+%        if OpenNew ==1
+%             STORMfinder;      
+%        end
+%     end
 
 %---- stv file -----v
 elseif ((~isempty(findstr(type,'.msc'))) && (direct))

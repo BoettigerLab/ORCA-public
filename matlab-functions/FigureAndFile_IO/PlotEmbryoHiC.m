@@ -4,8 +4,8 @@ function [normMap,rawMap] = PlotEmbryoHiC(locustxt,varargin)
 % data from: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE61471
 
 defaults = cell(0,3);
-defaults(end+1,:) = {'flyHiCbinCoordsPath', 'string', 'C:\Data\Fly\Embryo\Cavalli2014\GSE61471_nm_none_5000.bins.txt'};
-defaults(end+1,:) = {'flyHiCbinContactPath', 'string', 'C:\Data\Fly\Embryo\Cavalli2014\GSE61471_nm_none_5000.n_contact.txt'};
+defaults(end+1,:) = {'flyHiCbinCoordsPath', 'string', 'U:\GenomeData\Fly\Embryo\Cavalli2014\GSE61471_nm_none_5000.bins.txt'};
+defaults(end+1,:) = {'flyHiCbinContactPath', 'string', 'U:\GenomeData\Fly\Embryo\Cavalli2014\GSE61471_nm_none_5000.n_contact.txt'};
 defaults(end+1,:) = {'fontSize', 'positive', 14};
 defaults(end+1,:) = {'showplot','boolean',true};
 defaults(end+1,:) = {'colormap','colormap',GetColorMap('whiteToRed')};

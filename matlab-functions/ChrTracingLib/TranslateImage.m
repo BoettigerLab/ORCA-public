@@ -12,6 +12,10 @@ function imageOut = TranslateImage(imageIn,xshift,yshift,varargin)
 % Alistair Boettiger
 % Updated 4/8/17 to use faster padarray 
 % Updated 8/5/17 to clarify use of upsample on 3D images  
+% Updated 7/12/21 to allow different z-upsample
+% 
+% should compare to built-in imtranslate
+%    that function also works in 3D and does fractions
 
 % -------------------------------------------------------------------------
 % Default variables
@@ -20,6 +24,7 @@ defaults = cell(0,3);
 defaults(end+1,:) = {'padValue', 'freeType', 0};
 defaults(end+1,:) = {'verbose', 'boolean', false};
 defaults(end+1,:) = {'upsample','positive',1};
+defaults(end+1,:) = {'upsampleZ','positive',0};
 defaults(end+1,:) = {'zshift','float',0};
 defaults(end+1,:) = {'usePad','boolean',true}; 
 defaults(end+1,:) = {'trim','boolean',true}; 
@@ -29,12 +34,15 @@ defaults(end+1,:) = {'resize3D','boolean',false}; % sometimes 3rd dim is color
 % -------------------------------------------------------------------------
 parameters = ParseVariableArguments(varargin, defaults, mfilename);
 
+if parameters.upsampleZ==0
+    parameters.upsampleZ = parameters.upsample;
+end
 
 if parameters.upsample ~= 1
     xshift = round(xshift*parameters.upsample);
     yshift = round(yshift*parameters.upsample);
     if parameters.resize3D % 3rd dim is z-position
-        zshift =  parameters.zshift*parameters.upsample; % round(parameters.zshift*parameters.upsample);
+        zshift =  parameters.zshift*parameters.upsampleZ; % round(parameters.zshift*parameters.upsample);
         imageIn = imresize3(imageIn,parameters.upsample); % note, imresize does not rescale zshift
     else % 3rd dim is color
         zshift =   parameters.zshift; % round(parameters.zshift*parameters.upsample);
@@ -108,7 +116,7 @@ if parameters.verbose
     disp(['x-shifted ',num2str(xshift/parameters.upsample)]);
     disp(['y-shifted ',num2str(yshift/parameters.upsample)]);
     if zshift ~= 0
-        disp(['z-shifted ',num2str(zshift/parameters.upsample)]);
+        disp(['z-shifted ',num2str(zshift/parameters.upsampleZ)]);
     end
 end
 

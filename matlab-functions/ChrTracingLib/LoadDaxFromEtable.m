@@ -1,4 +1,4 @@
-function [daxInHybFov,daxInfoHybFov, rawNameInHybFov,maxNameInHybFov] = LoadDaxFromEtable(eTableXLS,varargin)
+function [daxInHybFov,daxInfoHybFov,rawNameInHybFov,maxNameInHybFov] = LoadDaxFromEtable(eTableXLS,varargin)
 % load a dax file using the eTable to determine 
 %  hybNumber, fov, dataType, and dataChannel
 % by default, the max-projection is returned.  Set 'maxProject',false, to
@@ -13,9 +13,12 @@ function [daxInHybFov,daxInfoHybFov, rawNameInHybFov,maxNameInHybFov] = LoadDaxF
 % dataType 'all'  daxInHybFov  datachannels are fid, dataRed, dataBlue
 % 
 % To add:
-% 
+%  CheckRegData -- this should be checked upstream, not here.
+%
+%
+
 defaults = cell(0,3);
-defaults(end+1,:) = {'dataType',{'fiducial','data','all'},'data'};
+defaults(end+1,:) = {'dataType',{'fiducial','data','all'},'all'}; % changed from 'data'
 defaults(end+1,:) = {'dataFolder','string',''};
 defaults(end+1,:) = {'saveFolder','string',''}; % place to save the registered data files 
 defaults(end+1,:) = {'hybNumber', 'integer', 1};  
@@ -23,6 +26,7 @@ defaults(end+1,:) = {'fov', 'integer', 1};
 defaults(end+1,:) = {'dataChannel', 'integer', inf}; % 1
 defaults(end+1,:) = {'hybFolder', 'string', ''}; 
 defaults(end+1,:) = {'maxProject', 'boolean', true}; % return max projection
+defaults(end+1,:) = {'overwrite', 'boolean', false}; % return max projection
 defaults(end+1,:) = {'selectFrames', 'integer', 0}; % 0 for all frames
 defaults(end+1,:) = {'daxRootDefault', 'string', 'ConvZscan*.dax'}; 
 defaults(end+1,:) = {'saveProject', 'boolean', true};  % write a maxProjection if one does not exist
@@ -30,6 +34,10 @@ defaults(end+1,:) = {'verbose', 'boolean', true};
 defaults(end+1,:) = {'veryverbose', 'boolean', false}; 
 defaults(end+1,:) = {'checkRegData', 'boolean', true};  % see if regData exists, if so, just return names 
 defaults(end+1,:) = {'readDax', 'boolean', true}; % make false to just return names 
+defaults(end+1,:) = {'fixDrift', 'boolean', false}; % optionally, try to find and fovNNN_regData.csv and correct drift
+defaults(end+1,:) = {'driftFolder', 'string', ''}; % folder in which to find and fovNNN_regData.csv 
+defaults(end+1,:) = {'hybType',{'all','B','H','R','T'},'all'}; % 
+defaults(end+1,:) = {'simplifyOutput', 'boolean', true}; % convert cell-array to image matrix if only 1 movie is requested
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 %%
@@ -41,6 +49,10 @@ pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 % allow either a pre-loaded table or filepath to table to be loaded
 %   this saves time if this function is called frequently;
+if isempty(eTableXLS)
+    [eFile,folder] = uigetfile('*.xlsx');
+   eTableXLS = [folder,eFile]; 
+end
 if ischar(eTableXLS)
     eTable = readtable(eTableXLS);
     dataFolder = [fileparts(eTableXLS),filesep];
@@ -48,7 +60,8 @@ elseif istable(eTableXLS)
     eTable = eTableXLS;
     dataFolder = pars.dataFolder;
 end
-[~,frameChannels,channels,~,dataChns] = GetFidChnFromTable(eTable);  % c 
+
+[~,frameChannels,channels,~,dataChns] = GetFidChnFromTable(eTable);  %
 fidChnName = setdiff(channels,dataChns);
 hybFolders = eTable.FolderName;
 
@@ -58,7 +71,7 @@ else
     saveFolder = pars.saveFolder;
 end
 
-% Get requested hyb
+% Get requested hyb set
 if ~isempty(pars.hybFolder)
     hybs = find(strcmp(pars.hybFolder,hybFolders));
     if isempty(hybs)
@@ -69,6 +82,10 @@ else
 end
 if isinf(hybs)
     hybs = 1:length(hybFolders);
+end
+if strcmp(pars.hybType,'B') % return only barcode hybs
+    barcodeHybes = strcmp(eTable.DataType,'B');
+    hybs = Row(intersect(hybs,find(barcodeHybes)));
 end
 
 % get requested FOV
@@ -110,7 +127,6 @@ if strcmp(pars.dataType,'all')
         dataFlagList{d+1} = ['dat',dataChns{d},'Max'];
     end
 elseif strcmp(pars.dataType,'data')
-    % numDatas     = min(length(dataChns),max(pars.dataChannel));  % this seems like a bug
     numDatas     = length(dataChns);
     reqFrameList = cell(numDatas,1);
     dataFlagList = cell(numDatas,1);
@@ -143,18 +159,18 @@ for f = pars.fov
             reqFrames   = reqFrameList{d};
             maxFlag     = [dataFlagList{d},'_'];           
             currFolder  = [dataFolder,hybFolders{h},filesep];
-            rawDaxFiles = cellstr(ls([currFolder,pars.daxRootDefault]));
+            rawDaxFiles = FindFiles([currFolder,pars.daxRootDefault],'fullPath',false); % cellstr(ls([currFolder,pars.daxRootDefault]));
             currDax     = [currFolder,rawDaxFiles{f}];
             maxName     = [maxFlag,rawDaxFiles{f}];
             maxFile     = [currFolder,maxName];
             try
                 if pars.readDax
                     if pars.maxProject
-                        if exist(maxFile,'file')
+                        if exist(maxFile,'file') && ~pars.overwrite
                             [dax,infoOut] = ReadDax(maxFile,'verbose',pars.veryverbose);
                         else
                             % This is inefficient for the first pass --
-                            %   The same dax file gets red in 3 seperate
+                            %   The same dax file gets read in 3 seperate
                             %   times (though matlab speeds rpt reading up
                             %   a bit) in order to separately save the
                             %   fiducial, dataChn1, dataChn2.  
@@ -164,16 +180,16 @@ for f = pars.fov
                             % have one, we create all 3, even if we only
                             % return 1. 
                             [dax,infoFile] = ReadDax(currDax,'verbose',pars.veryverbose);
+                            infoOut = infoFile;
                             dax = max(dax(:,:,reqFrames),[],3);
-                            if pars.saveProject % save max project  
-                                infoOut = infoFile;
+                            if pars.saveProject % save max project                                  
                                 infoOut.number_of_frames= 1;
                                 infoOut.localName = regexprep(maxName,'.dax','.inf');
                                 WriteDAXFiles(dax,infoOut,'verbose',pars.veryverbose);
                             end
                         end
                     elseif pars.selectFrames == 0
-                        dax = ReadDax(currDax,'verbose',false);              
+                        [dax,infoOut] = ReadDax(currDax,'verbose',false);              
                         dax = dax(:,:,reqFrames);
                     elseif pars.selectFrames ~= 0
                         dax = ReadDax(currDax,'verbose',false,'startFrame',min(pars.selectFrames),'endFrame',max(pars.selectFrames));              
@@ -193,8 +209,32 @@ for f = pars.fov
     end
 end
 
+% --- CorrectDrift
+if pars.fixDrift && pars.readDax
+    if isempty(pars.driftFolder)
+        pars.driftFolder = pars.saveFolder;
+    end
+    for f=pars.fov
+        try
+            regTable = readtable([pars.driftFolder,'fov',num2str(f,'%03d'),'_regData.csv']);
+            regStruct = table2struct(regTable);
+            for h= hybs
+                for d=1:numDatas
+                    daxInHybFov{h,f,d} = ApplyReg(daxInHybFov{h,f,d},regStruct(h));
+                end
+            end
+        catch er
+            warning(['Requested drift fix for FOV ', num2str(f), ' unable to fix drift']); 
+            warning(er.message);
+        end
+    end
+end
+
+%--- Correct Chromatic Aberration 
+
+
 % if only a single movie is requested, return the dax file. 
-if length(pars.fov) == 1 && length(hybs) == 1
+if length(pars.fov) == 1 && length(hybs) == 1 &&  numDatas == 1 && pars.simplifyOutput
    daxInHybFov = cat(3,daxInHybFov{hybs,pars.fov,:});
 end
 if pars.verbose

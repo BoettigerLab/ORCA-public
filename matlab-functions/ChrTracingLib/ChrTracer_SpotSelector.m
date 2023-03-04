@@ -108,7 +108,7 @@ function imHybs=LoadImage(handles)
     eTable = readtable(eTableXLS);
     [fidChn,dataChns] = GetChnNamesFromTable(eTable); % building names
     datLabeled = strcat('Chn ', dataChns',' Hybs:'); 
-    sourceDat =cat(1,{['Fid. ',fidChn{1},' Hybs:']},{'All Data Hybs:'}, datLabeled{:});
+    sourceDat = cat(1,{['Fid. ',fidChn{1},' Hybs:']},{'All Data Hybs:'}, datLabeled{:});
     set(handles.popupmenu1,'String',sourceDat); % updates
     % find hybs to load
     hybsToLoad = CT{handles.id}.parsSpotSelector.hybsToLoad;
@@ -117,41 +117,30 @@ function imHybs=LoadImage(handles)
     end
     fov = CT{handles.id}.parsSpotSelector.fov;
     imHybs = cell(length(hybsToLoad),1);
-    k = 0;
     try
         % load all requested hybs of indicated dataType for this FOV
-        for i=hybsToLoad
-            k=k+1;
-            % note these hybs are not aligned yet
-            temp = LoadDaxFromEtable(eTableXLS,...
-                        'dataType',CT{handles.id}.parsSpotSelector.dataType,...
-                        'fov',fov,...
-                        'hybNumber',i);
-            try   % load regData to align     
-                regTable = readtable([CT{handles.id}.saveFolder,'fov',num2str(fov,'%03d'),'_regData.csv']);
-                regData = table2struct(regTable);
-                temp = ApplyReg(temp,regData(i));
-            catch er
-                warning('failed to load registration');
-                if pars.verbose
-                   warning(er.getReport);  
-                end
-            end
-            imHybs{k} = temp;
+        % This dax loader will auto align the data
+        temp = LoadDaxFromEtable(eTableXLS,...
+                    'dataType',CT{handles.id}.parsSpotSelector.dataType,...
+                    'daxRootDefault',CT{handles.id}.parsLoadExpTable.daxRootDefault,...
+                    'fov',fov,...
+                    'hybNumber',hybsToLoad,...
+                    'fixDrift',true,...
+                    'driftFolder',CT{handles.id}.saveFolder,...
+                    'simplifyOutput',false);
+        selDataChns = get(handles.popupmenu1,'Value')-2;
+        if selDataChns==-1 % fiducial
+            selDataChns = 1; % it will be the only channel
+        elseif selDataChns == 0 % all
+            selDataChns = 1:size(temp,3);
         end
+        imHybs = squeeze(temp(:,fov,selDataChns));
+
         % max project these hybs. 
         if length(imHybs) > 1
             im = max(cat(3,imHybs{:}),[],3);
         else
             im = imHybs{1}; % this is faster than cat on nothing. 
-        end
-        if size(im,3) > 1 % multiple data channels
-            selDataChns = get(handles.popupmenu1,'Value')-2;
-            if selDataChns == 0
-                im = max(im,[],3);
-            elseif selDataChns > 0
-                im = im(:,:,selDataChns);
-            end
         end
         CT{handles.id}.currFOVim = im;
         set(handles.TextDir,'String','image loaded'); % guidata(hObject, handles);        
@@ -178,6 +167,9 @@ function ButtonFindSpots_Callback(hObject, eventdata, handles)
     global CT
     % import parameters
     pars = CT{handles.id}.parsSpotSelector.autofitPars;
+    if ~isfield(CT{handles.id},'currFOVim')
+        LoadImage(handles);
+    end
     im = CT{handles.id}.currFOVim;
     f = CT{handles.id}.parsSpotSelector.fov;
     % check for background detect
@@ -214,8 +206,6 @@ function ButtonFindSpots_Callback(hObject, eventdata, handles)
 %             text(spots(:,1)+2,spots(:,2),cellstr(num2str( (1:size(spots,1))')),'color','w');
         else
             CT{handles.id}.lociXY = AutoSelectSpots(im,'parameters',pars,'showPlots',false,'numberSpots',true);
-            
-            
         end
     else
         CT{handles.id}.lociXY = AutoSelectSpots(im,'parameters',pars,'showPlots',false,'numberSpots',true);      

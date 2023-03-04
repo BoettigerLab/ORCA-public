@@ -47,7 +47,15 @@ if length(nameparts{1})==5 % with commonRT
 else
     readNames = namebits(:,2);
 end
-readNums =  cellfun(@(x) str2double(regexprep(x,{'Fiducial','Read','readout','read','Stv_','B188','B189','B'},{'00','','','','','','',''})),readNames);  
+% remove 'was188' from readout053was188
+probeSwap = cellfun(@(x) strfind(x,'was'), readNames,'UniformOutput',false);
+for i=1:length(probeSwap)
+    if ~isempty(probeSwap{i})
+        readNames{i} = readNames{i}(1:probeSwap{i}-1);
+    end
+end
+ % 
+readNums =  cellfun(@(x) str2double(regexprep(x,{'Fiducial','Read','readout','barcode','read','Stv_','B188','B189','B'},{'00','','','','','','','',''})),readNames);  
 firstRead = min(readNums);
 lastRead = max(readNums); 
 numReads = lastRead-firstRead+1;

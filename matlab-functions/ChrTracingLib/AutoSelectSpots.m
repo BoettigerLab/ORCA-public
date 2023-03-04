@@ -104,15 +104,23 @@ bw = imregionalmax(mask);                                              %  figure
 [h,w] = size(mask);
 onEdge = x > w-pars.border | x<pars.border | y > h-pars.border | y<pars.border;
 
+if pars.showExtraPlots
+    figure(pars.extraFigHandle); clf; 
+    imagesc(mask); colormap(gray); colorbar; 
+    title('spot selection mask');
+    disp('press any key to continue');
+    pause;
+end
+
 % remove points which stack up vertically or horizontally
 if pars.removeEdgeStack > 0
     [v,n] = occurrences( round(x));
-    bad = v(n>10);
+    bad = v(n>pars.removeEdgeStack);
     for b=1:length(bad)
         onEdge = onEdge | round(x)==bad(b);
     end
     [v,n] = occurrences( round(y));
-    bad = v(n>10);
+    bad = v(n>pars.removeEdgeStack);
     for b=1:length(bad)
         onEdge = onEdge | round(y)==bad(b);
     end
@@ -120,7 +128,7 @@ end
 
 x(onEdge) = []; 
 y(onEdge) = [];
-spots = round(pars.autoSelectDownsample*[x,y] - pars.autoSelectDownsample/2);
+spots = round(pars.autoSelectDownsample*([x,y]-1/2));
 
 
 if pars.showPlots

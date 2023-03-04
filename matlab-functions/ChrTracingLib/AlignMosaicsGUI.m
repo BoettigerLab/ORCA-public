@@ -185,6 +185,10 @@ classdef AlignMosaicsGUI < StepGUIclass
             [~,~,~,daxNames1] =  LoadDaxFromEtable(eTable1_xls,...
                             'parameters',pars,'saveFolder',self.chn1Data.analysisFolder,...
                             'hybNumber',pars.hybs,'fov',pars.fovs);
+            % update pars.fovs
+            if isinf(pars.fovs)
+                self.stepParameters{1}.fovs = GetFOVnums(daxNames1);
+            end
             % create hybe-registered image tiles of all data
             [self.chn1Data.imageTiles,stageXY1,mosPars] =LoadRegDaxAsMosaic(daxNames1,...        % Image tiles in memory
                 'parameters',pars,'saveFolder',self.chn1Data.analysisFolder);
@@ -523,7 +527,8 @@ classdef AlignMosaicsGUI < StepGUIclass
 %                 flipud= self.stepParameters{1}.flipud*ones(length(x),1);
 %                 transpose= self.stepParameters{1}.transpose*ones(length(x),1);
                 scope= repmat(self.stepParameters{1}.scope,length(x),1);
-                writetable(table(x,y,w,h,trim,scope),ulTable);
+                fov = Column(self.stepParameters{1}.fovs);
+                writetable(table(x,y,w,h,trim,scope,fov),ulTable);
                 try
                     for c=1:nChns
                         mosaicOut= self.comboData.comboMosaic(:,:,c); 

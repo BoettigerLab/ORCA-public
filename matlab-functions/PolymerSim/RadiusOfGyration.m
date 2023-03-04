@@ -18,6 +18,6 @@ dim = size(B,2);
     Rd = (B(:,1)-rm(1)).^2 + (B(:,2)-rm(2)).^2;
     Rg = sqrt( sum( Rd)/N);
  else
-     disp('warning: empty polymer, Rg=0'); 
-     Rg = 0; 
+     disp('warning: empty polymer, Rg=NaN'); 
+     Rg = NaN; 
  end

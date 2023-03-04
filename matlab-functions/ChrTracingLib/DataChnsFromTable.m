@@ -12,6 +12,7 @@ dataType = cell(numDats,1);
 hybe = zeros(numDats,1);
 chnNum = zeros(numDats,1);
 k=0;
+try
 for h=1:numHybes
     if iscell(eTable.Readouts) % new format, a string of multiple readouts, comma separated
         readNames = strsplit(eTable.Readouts{h},','); 
@@ -28,3 +29,7 @@ for h=1:numHybes
     end
 end
 datPropTable = table(readout,chn,dataType,hybe,chnNum);
+catch er
+    disp(er.getReport);
+    disp('debug here');
+end

@@ -70,14 +70,17 @@ numDataChns = length(dataChns);
 % in practice it doesn't look like this accelerates things.
 h=1;
 infoFile = ReadInfoFile(rawDataNames{h}, 'verbose', pars.veryverbose);
-numRows = infoFile.frame_dimensions(1); % check, these dimensions might be swapped! 
-numCols = infoFile.frame_dimensions(2);
+% numRows = infoFile.frame_dimensions(1); % check, these dimensions might be swapped! 
+% numCols = infoFile.frame_dimensions(2);
 
 
 framesInDax = infoFile.number_of_frames;
 frameDim = [infoFile.frame_dimensions(1)/infoFile.binning(1),...
             infoFile.frame_dimensions(2)/infoFile.binning(2)];
 frameDim = uint32(frameDim);
+
+numRows = frameDim(2); % swapped, 12/2/20 
+numCols = frameDim(1);
 framesInDax = uint32(framesInDax);
 if ~isempty( strfind(infoFile.data_type,'little endian') )
     binaryFormat = 'l';
@@ -123,8 +126,8 @@ for h=1:numHybes   % consider parfor this
     isFidChannel(skipFrames) = false; % could move out of loop
     selectFrames = uint32(find(isFidChannel)); 
     framesToLoadFid = length(selectFrames);
-    [ri,ci,zi] = meshgrid(uint32(xi:xe),uint32(yi:ye),selectFrames);
-    fidInds = sub2indFast([frameDim(2),frameDim(1),framesInDax],ri(:),ci(:),zi(:));
+    [ri,ci,zi] = meshgrid(uint32(xi:xe),uint32(yi:ye),selectFrames);  % kept [R,C] = mesh(X,Y), though FitPsf3D is [Y,X]=meshgrid(ys,xs)
+    fidInds = sub2indFast([frameDim(1),frameDim(2),framesInDax],ri(:),ci(:),zi(:)); % also [H,W]. swapped dim1 and 2, despite annotation in sub2indFast
     
     % get data indicies
     datInds = cell(1,numDataChns);
@@ -134,8 +137,8 @@ for h=1:numHybes   % consider parfor this
         isCurrDat(skipFrames) = false;
         selectFrames = uint32(find(isCurrDat)); 
         datFramesToLoad{n} = length(selectFrames);
-        [ri,ci,zi] = meshgrid(uint32(xi:xe),uint32(yi:ye),selectFrames);
-        datInds{n} = sub2indFast([frameDim(2),frameDim(1),framesInDax],ri(:),ci(:),zi(:));
+        [ri,ci,zi] = meshgrid(uint32(xi:xe),uint32(yi:ye),selectFrames);  % meshgrid should be [Y,X] = meshgrid(ys,xs)
+        datInds{n} = sub2indFast([frameDim(1),frameDim(2),framesInDax],ri(:),ci(:),zi(:));
     end
 
 
@@ -163,7 +166,7 @@ for h=1:numHybes   % consider parfor this
     fclose(fid);
     tt = toc;
     tic
-    im = dax(fidInds);
+    im = dax(fidInds); 
     % im =memMaps{h}.Data(fidInds); %  movie1(fidInds); 
     ttt = toc;   
     if pars.veryverbose
@@ -175,7 +178,7 @@ for h=1:numHybes   % consider parfor this
     if strcmp(binaryFormat,'b')
         im = swapbytes(im);
     end
-    im = reshape(im,[ys,xs,framesToLoadFid]); % figure(7); clf; imagesc(max(movie,[],3)); colormap gray; 
+    im = reshape(im,[ys,xs,framesToLoadFid]); % figure(7); clf; imagesc(max(im,[],3)); colormap gray; 
     if pars.downSampleZ ~= 1
        im = im(:,:,1:pars.downSampleZ:end);
     end
@@ -245,8 +248,8 @@ end
 
 if pars.showPlots
     try
-    datSptsT = datSpts';
-    datMat = cat(4,datSptsT{:});
+    datSptsT = datSpts';  % This and next line, sort in alternating order.
+    datMat = cat(4,datSptsT{:}); % sort in alternating order.
     fidMat = cat(4,fidSpts{:});
 
     % Projections
@@ -256,16 +259,16 @@ if pars.showPlots
     stk = cellfun(@(x) max(permute(x,[3,2,1]),[],3),fidSpts,'UniformOutput',false);
     stk1xz = cat(3,stk{:}); 
     nZ = size(stk1xz,1); stk1xz = stk1xz(10:nZ-10,:,:);
-    subplot(2,2,1);  Ncolor(2/numHybes*IncreaseContrast(stk1xy)); title('corr. fid x,y aligned');
-    subplot(2,2,2); Ncolor(2/numHybes*IncreaseContrast(stk1xz)); title('corr. fid x,z  aligned');
+    subplot(2,2,1);  Ncolor(2/numHybes*IncreaseContrast(stk1xy)); title('corr. fid x,y global sub-pixel aligned');
+    subplot(2,2,2); Ncolor(2/numHybes*IncreaseContrast(stk1xz)); title('corr. fid x,z  global sub-pixel aligned');
 
     stk = cellfun(@(x) max(x,[],3),fidSptsRaw,'UniformOutput',false);
     stk1xy = cat(3,stk{:}); 
     stk = cellfun(@(x) max(permute(x,[3,2,1]),[],3),fidSptsRaw,'UniformOutput',false);
     stk1xz = cat(3,stk{:}); 
     nZ = size(stk1xz,1); stk1xz = stk1xz(10:nZ-10,:,:);
-    subplot(2,2,3);  Ncolor(2/numHybes*IncreaseContrast(stk1xy)); title('corr. fid x,y raw');
-    subplot(2,2,4); Ncolor(2/numHybes*IncreaseContrast(stk1xz)); title('corr. fid x,z  raw');
+    subplot(2,2,3);  Ncolor(2/numHybes*IncreaseContrast(stk1xy)); title('corr. fid x,y global pixel aligned');
+    subplot(2,2,4); Ncolor(2/numHybes*IncreaseContrast(stk1xz)); title('corr. fid x,z  global pixel aligned');
 
     % Data Projections
     figure(3);  clf;
@@ -300,13 +303,19 @@ if pars.showPlots
     PlotProjection4D(datMat,'fits',[],'projection','xz','tileLabels',tileLabels_dat); title('data xz');
     
     % max dataspots
-    maxDat = cellfun(@(x) quantile(x(:),.999),datSptsT);
-    minDat = cellfun(@(x) quantile(x(:),.02),datSptsT);
-    figure(10); clf; bar(maxDat); hold on; bar(minDat);
-    legend('data spot','data background'); 
+
+    figure(10); clf;
+    for d=1:numDataChns
+        maxDat = cellfun(@(x) quantile(x(:),.999),datSpts(:,d));
+        minDat = cellfun(@(x) quantile(x(:),.02),datSpts(:,d));
+        subplot(numDataChns,1,d);
+        bar(maxDat); hold on; bar(minDat);
+        title(['channel ',num2str(d)]);
+        legend('data spot','data background'); 
+    end
     catch er
-        warning(er.message);
+        warning(er.getReport);
         cprintf([1 .5 0],'error trying to plot figures');
-        
+        disp('place debug here');
     end
 end

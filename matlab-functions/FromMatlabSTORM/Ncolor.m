@@ -7,7 +7,9 @@ function imOut = NColor(imIn,varargin)
 % -------------------------------------------------------------------------
 defaults = cell(0,3);
 defaults(end+1,:) = {'colormap', 'colormap', 'hsv'};
-
+defaults(end+1,:) = {'contrastRGB', 'boolean', false};
+defaults(end+1,:) = {'contrastHigh', 'fraction', .9999};
+defaults(end+1,:) = {'contrastLow', 'fraction', 0};
 % -------------------------------------------------------------------------
 % Parse necessary input
 % -------------------------------------------------------------------------
@@ -18,17 +20,22 @@ end
 % -------------------------------------------------------------------------
 % Parse variable input
 % -------------------------------------------------------------------------
-if length(varargin) == 1
-    parameters.colormap = varargin{1};
-else
-    parameters = ParseVariableArguments(varargin, defaults, mfilename);
+
+if length(varargin) == 1 % allow shorthand pass
+    % pars.colormap = varargin{1};
+    varin = {'colormap',varargin{1}};
+else 
+    varin = varargin;
 end
+
+pars = ParseVariableArguments(varin, defaults, mfilename);
+
 
 % -------------------------------------------------------------------------
 %% Main Function
 % -------------------------------------------------------------------------
 [vDim,hDim,numColors] = size(imIn);
-clrmap = GetColorMap(parameters.colormap,numColors); 
+clrmap = GetColorMap(pars.colormap,numColors); 
 
 if size(clrmap,1) < numColors
     error(['colormap must be a colormap name or a colormap matrix of length at least ',num2str(numColors)]);
@@ -41,8 +48,15 @@ for c=1:numColors
     end
 end
 
+if pars.contrastRGB
+    if ~isa(imOut,'uint16') && ~isa(imOut,'uint8')
+        imOut = makeuint(imOut,16);
+    end
+    imOut = imadjust(imOut,stretchlim(imOut,[pars.contrastLow,pars.contrastHigh]));
+end
+
 if nargout == 0
-    if ~isa(imOut,'uint16') & ~isa(imOut,'uint8')
+    if ~isa(imOut,'uint16') && ~isa(imOut,'uint8')
         imOut = makeuint(imOut,16);
     end
     imagesc(imOut);

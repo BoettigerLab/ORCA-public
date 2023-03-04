@@ -75,6 +75,7 @@ else
             bkd = regionfill(bkd,isnan(bkd)); % interpolate missing region
 
         case 'medianEdge'
+            % median but ignoring edge values
             topEdge = imStack(1:20,:,:);
             lftEdge = imStack(:,1:20,:);
             botEdge = imStack(end-19:end,:,:);

@@ -75,10 +75,10 @@ for x=xs
         intra = [nanmean(L(:)),nanmean(R(:))];
         intra_max = max(nanmean(L(:)),nanmean(R(:)));
     end
-    if strcmp(pars.dataType,'contact')
-        intra_max = max(intra);
-    elseif strcmp(pars.dataType,'distance')
-        intra_max = min(intra);
-    end
+%     if strcmp(pars.dataType,'contact')
+%         intra_max = max(intra);
+%     elseif strcmp(pars.dataType,'distance')
+%         intra_max = min(intra);
+%     end
     ratio(k) = intra_max./inter;
 end

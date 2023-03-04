@@ -7,14 +7,20 @@ pars = ParseVariableArguments(varargin, defaults, mfilename);
 
 
     h = pars.hyb;
-    channels = strsplit(regexprep(eTable.channels{h},'[^A-Za-z0-9,]',''),',');
-    nBufFrames = eTable.bufferFrames(h);
-    totFrames  = eTable.totalFrames(h);
+    channels = strsplit(regexprep(eTable.channels{h},'[^A-Za-z0-9,]',''),','); % the hyb specific channels used
+    nBufFrames = eTable.bufferFrames(h); % allow hyb specific use of buffer frames
+    totFrames  = eTable.totalFrames(h); % allow hyb specific total frames size (e.g. 2 clr vs 3 clr)
     frameChannels = cell(totFrames,1);
     numChns = length(channels);
-    fidChannel = strcmp(channels,num2str(eTable.fiducialChannel(h)));
-    dataChns = channels(~fidChannel);
-    fidChn = channels(fidChannel);
+    if eTable.fiducialChannel(h) ~= 0
+        fidChannel = strcmp(channels,num2str(eTable.fiducialChannel(h))); % hyb specific fid channel
+        dataChns = channels(~fidChannel); % these will be hyb specific data chns
+        fidChn = channels(fidChannel);
+    else
+        fidChannel = [];
+        dataChns = channels;
+        fidChn = [];
+    end
     % populate alternating channels
     for c=1:numChns
        nFr = length(frameChannels(c:numChns:end));
@@ -37,6 +43,11 @@ pars = ParseVariableArguments(varargin, defaults, mfilename);
         frameChannels{f} = [frameChannels{f},'-m'];
         frameChannels{end+1-f} = [frameChannels{end+1-f},'-m'];
     end
-    isFidChannel = StringFind(frameChannels,fidChn{1},'boolean',true);
+    if eTable.fiducialChannel(h) ~= 0
+        isFidChannel = StringFind(frameChannels,fidChn{1},'boolean',true);
+    else
+        isFidChannel = false(totFrames,1);
+        % StringFind(frameChannels,fidChn{1},'boolean',true);
+    end
     nFrames = totFrames -2*nBufFrames;
     midFrame = round(nFrames/numChns);

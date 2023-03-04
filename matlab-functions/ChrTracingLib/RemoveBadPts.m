@@ -1,5 +1,15 @@
-function [badFits,strays] = RemoveBadPts(allMaps,varargin)
+function [badFits,strays,strayID] = RemoveBadPts(allMaps,varargin)
 % badFits = RemoveBadPts(allMaps,varargin)
+% badFits is a logical array, N-monomers x N-monomers x N-observations
+% strays is a logical array, N-monomers x Nobservations 
+% 
+% Input can be either a single map, and stack of maps, a single polymer or
+% a stack of polymers. 
+%
+% Examples:
+% [badFits,strays] = RemoveBadPts(allMaps)
+% Remove bad points from the map: allMaps(badFits) = NaN
+% Reomve bad points from the polymer list: polymerList() = NaN;
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'maxJump','positive',400};
@@ -11,7 +21,19 @@ defaults(end+1,:) = {'scalingMagnitude','positive',300};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 %% remove badPts;
-[~,numReads,numSpots] = size(allMaps);
+[numReads,dim2,numSpots] = size(allMaps);
+
+% if polymers were passed instead of maps, build maps
+if dim2 < numReads && dim2 < 5 
+    numSpots = size(allMaps,3);
+    polydata = allMaps;
+    allMaps = nan(numReads,numReads,numSpots);
+    for n=1:numSpots
+        allMaps(:,:,n) = squareform(pdist(polydata(:,1:3,n)));
+    end
+end
+
+% otherwise we just continue with the maps
 if pars.verbose
     disp(['Showing data from ',num2str(numSpots) ' cells']);
 end
@@ -57,4 +79,8 @@ else
         badFits(:,:,s) = badPts;
     end
 
+end
+
+if nargout>2
+     strayID = permute(repmat(strays,1,1,4),[1,3,2]);
 end

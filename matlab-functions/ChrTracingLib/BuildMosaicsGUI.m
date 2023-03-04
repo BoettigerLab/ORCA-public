@@ -156,8 +156,9 @@ classdef BuildMosaicsGUI < StepGUIclass
         end     
     end
     % ==== 
-    methods     
-        function self = LoadData(self,pars)%==== step 1
+    methods   
+% ========================== STEP 1:  Load Data ================================ % 
+        function self = LoadData(self,pars)
             % get analysis folder
             if strcmp(pars.analysisFolder(1),'.') % current directory 
                 saveName = fileparts(pars.chnTableFile);
@@ -182,8 +183,9 @@ classdef BuildMosaicsGUI < StepGUIclass
             self.stepParameters{5}.dataType = pars.dataType;
             self.stepParameters{5}.fovs = pars.fov;
         end
+% ========================== STEP 2:  Align Hybs ================================ % 
         % ---- Align Hybs 
-        function self = AlignHybs(self,pars)  % ==== STEP 2
+        function self = AlignHybs(self,pars)  
             fidChn = 1;
             [nHybs,nFov] = size(self.daxInHybFov(:,:,fidChn)); %#ok<ASGLU>
             if nHybs > 1
@@ -196,7 +198,7 @@ classdef BuildMosaicsGUI < StepGUIclass
                 set(self.gui_h.TextDir,'String',textOut); 
             end
         end
-        % ---- Validate Mosaic
+% ========================== STEP 3: Validate Mosaic ================================ % 
         function self = ValidateMosaic(self,pars)
             [self.imageTiles,self.stageXY,scopePars] = LoadRegDaxAsMosaic(self.maxNameInHybFov,'parameters',pars);
             % display results
@@ -262,6 +264,12 @@ classdef BuildMosaicsGUI < StepGUIclass
                             'parameters',pars,'saveFolder',self.saveFolder,...
                             'hybNumber',pars.hybs,'fov',pars.fovs,...
                             'readDax',false,'verbose',false);
+                        
+            % update pars.fovs with fov nums for export
+            if isinf(pars.fovs)  % 
+                % self.stepParameters{5}.fovs = GetFOVnums(daxNames1);
+                self.stepParameters{5}.fovs = GetFOVnums(self.maxNameInHybFov(1,:,1)); 
+            end
             % create hybe-registered image tiles of all data
             [self.imageTiles,self.stageXY] =LoadRegDaxAsMosaic(self.maxNameInHybFov,...
                 'parameters',pars,'saveFolder',self.saveFolder);
@@ -281,22 +289,22 @@ classdef BuildMosaicsGUI < StepGUIclass
             savePars = struct2table(pars,'AsArray',true);
             writetable(savePars,[self.saveFolder,'ParsExploreMosaic.csv']);        
             [~,nChns] = size(self.imageTiles);
-            ul = self.stageXY + self.xyShifts; % stage positions + fiducial drift alignment;
+            ul = self.stageXY + self.xyShifts(pars.fovs,:); % stage positions + fiducial drift alignment;
             mosaicIm = cell(nChns,1);
             disp('converting tiles to mosaic...');
             tic
             for c=1:nChns
                 imTiles = self.imageTiles(:,c);
-                if ~strcmp(pars.backgroundCorrect,'none')
-                    imTiles = FlattenBackground(imTiles,'parameters',pars);
-                end
+%                 if ~strcmp(pars.backgroundCorrect,'none')  % LoadRegDaxAsMosaic already does this!
+%                     imTiles = FlattenBackground(imTiles,'parameters',pars);
+%                 end
                 [mosaicIm{c},self.ulOut]= TilesToMosaic(imTiles,ul,'padMosaic',1);
             end
             toc
             mosaicIm = cat(3,mosaicIm{:});
             self.mosaicImage = mosaicIm;
             % figure(2); clf; imagesc(mosaicIm(:,:,end)); colormap(gray)
-            % should have some flatten this dataset funcitons 
+            % should have some flatten this dataset functions 
             nca = NcolorApp(mosaicIm,'names',self.chnNames);  
             
 %            % troubleshoot tiles
@@ -362,7 +370,8 @@ classdef BuildMosaicsGUI < StepGUIclass
 %                 flipud= self.stepParameters{5}.flipud*ones(length(x),1);
 %                 transpose= self.stepParameters{5}.transpose*ones(length(x),1);
                 scope= repmat(self.stepParameters{5}.scope,length(x),1);
-                ulTableData = table(x,y,w,h,trim,scope);
+                fov = Column(self.stepParameters{5}.fovs);
+                ulTableData = table(x,y,w,h,trim,scope,fov);
                 writetable(ulTableData,ulTable);
                 for c=1:nChns
                   	mosaicOut= self.mosaicImage(:,:,c); 

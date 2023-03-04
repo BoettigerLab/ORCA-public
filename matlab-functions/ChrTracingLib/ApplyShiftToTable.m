@@ -2,6 +2,8 @@ function spotTable = ApplyShiftToTable(spotTable,otChn,tform3D,varargin)
 % adds / updates columns xcShift, ycShift, zcShift by transforming the data
 % in spotTable.x,y,z and spotTable.locusX,Y with the 'tform3D' for the
 % specified channel 'otChn'
+% note otChn is numeric (e.g. a double) in this version. The values in
+% spotTable.chn are also numeric rather than strings. 
 % 
 % called by:
 %  ChromaticAlignFromTable

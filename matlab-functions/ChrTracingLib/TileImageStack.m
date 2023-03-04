@@ -41,6 +41,7 @@ panelHeight = fh.Position(4)/numRows;
 
 if pars.colorTiles
     cmap = GetColorMap(pars.colormap,numTiles);
+    cmap = cast(cmap,class(imageIn));
 end
 
 if isempty(pars.imWhite)

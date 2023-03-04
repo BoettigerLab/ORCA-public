@@ -134,6 +134,12 @@ if strcmp(infFileName((end-3):end), '.dax')
     infFileName = [infFileName(1:(end-4)) '.inf'];
 end
 
+xmlFileName = [infFileName(1:(end-4)) '.xml'];
+xmlStruct = struct();
+if exist(xmlFileName,'file')~=0
+    xmlStruct = ReadXML(xmlFileName);
+end
+
 % Open file
 fid = fopen(infFileName);
 if fid == -1
@@ -210,3 +216,15 @@ if any(infoFile.frame_dimensions == 0)
         infoFile.vend - infoFile.vstart + 1];
 end
 
+if ~isempty(fields(xmlStruct))
+    try
+        infoFile.Stage_X = xmlStruct.settings.acquisition.stage_position(1);
+        infoFile.Stage_Y = xmlStruct.settings.acquisition.stage_position(2);
+        infoFile.Stage_Z = xmlStruct.settings.acquisition.lock_target;
+        infoFile = JoinStructures(infoFile,xmlStruct);
+    catch er
+        if verbose
+            disp(er.message);
+        end        
+    end
+end

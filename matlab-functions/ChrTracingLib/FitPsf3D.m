@@ -71,19 +71,22 @@ defaults(end+1,:) = {'cameraBackground', 'nonnegative', 0};
 defaults(end+1,:) = {'peakBlur', 'nonnegative', .5}; % gaussian smoothing before initial find max 
 defaults(end+1,:) = {'maxFitWidth', 'positive', 8};
 defaults(end+1,:) = {'maxFitZdepth', 'positive', 14};
+defaults(end+1,:) = {'symmetricXY','boolean',true};
 defaults(end+1,:) = {'initSigmaXY','positive',1.25};
 defaults(end+1,:) = {'initSigmaZ','positive',2.5};
 % less common pars
 defaults(end+1,:) = {'minSep','positive',3}; % minimum separation in pixels between initial maxima
-defaults(end+1,:) = {'maxSigma','positive',2.5}; % max psf XY (PSF sigmaZ ~= 2*sigmaXY). Upperbound in fit
-defaults(end+1,:) = {'minSigma','positive',.1}; % min psf XY (PSF sigmaZ ~= 2*sigmaXY). Lower bound in fit
+defaults(end+1,:) = {'maxSigma','positive',2}; % max psf XY . Upperbound in fit
+defaults(end+1,:) = {'minSigma','positive',.1}; % min psf XY  Lower bound in fit
+defaults(end+1,:) = {'maxSigmaZ','positive',2.5}; % max psf XY (PSF sigmaZ ~= 2*sigmaXY). Upperbound in fit
+defaults(end+1,:) = {'minSigmaZ','positive',.1}; % min psf XY (PSF sigmaZ ~= 2*sigmaXY). Lower bound in fit
 defaults(end+1,:) = {'peakBound','positive',2}; % max number of pixels between brightest-pixel and gaussian-center. Set upper and lower bounds during fitting
 defaults(end+1,:) = {'FiniteDifferenceType',{'central','forward'},'central'};
 defaults(end+1,:) = {'MaxFunctionEvaluations','positive',5E3};
 defaults(end+1,:) = {'OptimalityTolerance','positive',1E-8};
 defaults(end+1,:) = {'verbose','boolean',true};
 defaults(end+1,:) = {'veryVerbose','boolean',false};
-defaults(end+1,:) = {'troubleshoot','boolean',true};
+defaults(end+1,:) = {'troubleshoot','boolean',false};
 % filtering pars
 defaults(end+1,:) = {'keepBrightest','integer',inf};
 defaults(end+1,:) = {'filterSpot','boolean',true};
@@ -92,6 +95,7 @@ defaults(end+1,:) = {'minHBratio','nonnegative',1.2}; % peak value over backgrou
 defaults(end+1,:) = {'minAHratio','nonnegative',.25}; % fitted height over background vs peak value
 defaults(end+1,:) = {'maxUncert','nonnegative',2}; % pixels
 defaults(end+1,:) = {'resRatio','nonnegative',inf}; % pixels
+defaults(end+1,:) = {'badSpots',{'remove','nan'},'remove'}; % pixels
 % manual seed point
 defaults(end+1,:) = {'seedPoint','array',[]}; 
 % units
@@ -117,10 +121,14 @@ if isempty(pars.seedPoint)
    % not sure this should use the same pars.maxFitWidth and maxZdepth.
    % the function as written defaults to take the center. 
 else
-    x = pars.seedPoint(1);
-    y = pars.seedPoint(2);
-    z = pars.seedPoint(3);
-    h = Im1(x,y,z); 
+    x = pars.seedPoint(:,1);
+    y = pars.seedPoint(:,2);
+    z = pars.seedPoint(:,3);
+    try
+        h = pars.seedPoint(:,4);
+    catch
+        h = squeeze(Im1(x,y,z)); 
+    end
     dTable = table(x,y,z,h);
 end
 [rowsIm,colsIm,stcksIm] = size(Im1);
@@ -129,9 +137,12 @@ bz = min([floor(pars.maxFitZdepth/2),floor(stcksIm/2)]); % short hand for crop;
 
 if pars.troubleshoot
     % plot local maxima to pixel precision
-    subplot(3,2,1); imagesc(max(Im1,[],3)); hold on; plot(dTable.x,dTable.y,'o','color',[1 .5 .5]);  % plots x vs y
+    [xy,xz] = ProjectIm3D(Im1);
+    subplot(3,2,1); imagesc(xy); hold on; plot(dTable.x,dTable.y,'o','color',[1 .5 .5]);  % plots x vs y
+    title('xy');
     % squashed the columns (y-dim); put the stack (z-dim) on the y-axis (new columns);  plots x vs z;
-    subplot(3,2,2); imagesc(max(permute(Im1,[3,2,1]),[],3)); hold on; plot(dTable.x,dTable.z,'o','color',[1 .5 .5]); 
+    subplot(3,2,2); imagesc(xz); hold on; plot(dTable.x,dTable.z,'o','color',[1 .5 .5]); 
+    title('xz'); 
 end
 
 % Fit 3D Gaussian
@@ -149,19 +160,21 @@ zL = zeros(nMax,1);
 zU = zeros(nMax,1); 
 resRatio = zeros(nMax,1); 
 
+Im2 = double(Im1);
 for i = 1:nMax
     % crop region around local maxima
     
     xr = max(1,dTable.x(i)-bw):min(dTable.x(i)+bw,colsIm);
     yr = max(1,dTable.y(i)-bw):min(dTable.y(i)+bw,rowsIm);
     zr = max(1,dTable.z(i)-bz):min(dTable.z(i)+bz,stcksIm);
-    data_3d = double(Im1(yr,xr,zr));  % matrix indexing, col-y, row-x, stck-z
+    data_3d = double(Im2(yr,xr,zr));  % matrix indexing, col-y, row-x, stck-z
     
     if pars.troubleshoot
         % plot region being used for spot-fitting
         [Y,X] = meshgrid(yr,xr);  % matrix indexing, col-y, row-x, stck-z
-        subplot(3,2,3); imagesc(max(Im1,[],3)); hold on; plot(X(:),Y(:),'r.');  % plot indexing, x vs y 
-        subplot(3,2,4); imagesc(max(data_3d,[],3)); 
+        subplot(3,2,3); imagesc(max(Im1,[],3)); title('xy orig region');
+        hold on; plot(X(:),Y(:),'r.');  % plot indexing, x vs y 
+        subplot(3,2,4); imagesc(max(data_3d,[],3)); title('xy reg for fitting');
         title(i);
     end
     
@@ -182,16 +195,19 @@ for i = 1:nMax
     peakBound = pars.peakBound;
 
     % least squares fitting to a 3D Gaussian
+    if pars.symmetricXY
+    minRes = @(p) exp(-((Y(:)-p(1))/(2*p(2))).^2 -((X(:)-p(3))/(2*p(2))).^2 -((Z(:)-p(5))/(2*p(6))).^2 )*p(7)+p(8) -data_3d(:);
+    else
     minRes = @(p) exp(-((Y(:)-p(1))/(2*p(2))).^2 -((X(:)-p(3))/(2*p(4))).^2 -((Z(:)-p(5))/(2*p(6))).^2 )*p(7)+p(8) -data_3d(:);
+    end
     par0 = [mu_x0,sigma_x0,mu_y0,sigma_y0,mu_z0,sigma_z0,a0,b0]; % initial fits
-    lb = [mu_x0-peakBound,minSigma,mu_y0-peakBound,minSigma,mu_z0-peakBound,minSigma,0,0]; % lower bound 
-    ub = [mu_x0+peakBound,maxSigma,mu_y0+peakBound,maxSigma,mu_z0+peakBound,2*maxSigma,2^16,2^16]; % upper bound
+    lb = [mu_x0-peakBound,minSigma,mu_y0-peakBound,minSigma,mu_z0-peakBound,pars.minSigmaZ,0,0]; % lower bound 
+    ub = [mu_x0+peakBound,maxSigma,mu_y0+peakBound,maxSigma,mu_z0+peakBound,pars.maxSigmaZ,2^16,2^16]; % upper bound
     options = optimoptions('lsqnonlin',...
                            'FiniteDifferenceType',pars.FiniteDifferenceType,...
                            'OptimalityTolerance',pars.OptimalityTolerance,...
                            'MaxFunctionEvaluations',pars.MaxFunctionEvaluations,...
                            'Display','off');
-    [par,resnorm] = lsqnonlin(minRes, par0,lb,ub,options);
     [par,resnorm,residual,~,~,~,jacobian] = lsqnonlin(minRes, par0,lb,ub,options);
     ci = nlparci(par,residual,'jacobian',jacobian,'alpha',1-.95); % 95% CI 
     % resnorm is just: resnorm = sum( (fit(:) - data(:)).^2 )
@@ -203,7 +219,11 @@ for i = 1:nMax
     dTable.y(i) = (min(yr)-1+par(3))*pars.xyUnitConvert;
     dTable.z(i) = (min(zr)-1+par(5))*pars.zUnitConvert;
     wx(i) = par(2)*pars.xyUnitConvert;
-    wy(i) = par(4)*pars.xyUnitConvert;
+    if pars.symmetricXY      
+        wy(i) = par(2)*pars.xyUnitConvert;
+    else
+        wy(i) = par(4)*pars.xyUnitConvert;
+    end
     wz(i) = par(6)*pars.zUnitConvert;
     a(i) = par(7);
     b(i) = par(8); 
@@ -217,21 +237,42 @@ for i = 1:nMax
     
     % plot results for validation
     if pars.troubleshoot
-        subplot(3,2,5); imagesc(max(data_3d,[],3));  
+        subplot(3,2,5); imagesc(max(data_3d,[],3));  title('xy');
         hold on; plot(mu_x0,mu_y0,'ro'); plot(par(1),par(3),'r+');
-        subplot(3,2,6); imagesc(max(permute(data_3d,[3,2,1]),[],3));  
+        subplot(3,2,6); imagesc(max(permute(data_3d,[3,2,1]),[],3));  title('xz');
         hold on; plot(mu_x0,mu_z0,'ro'); plot(par(1),par(5),'r+');
     end
+    
+    if nMax > 1
+        % minRes
+       minVal = quantile(data_3d(:),.01);
+       imReconstruct = double(minRes(par)) + data_3d(:);  % imVal =  double(data_3d(:));
+       imReconstruct = reshape(imReconstruct,rows,cols,stcks);
+       imReconstruct = padarray(imReconstruct,[yr(1)-1,xr(1)-1,zr(1)-1],minVal,'pre');
+       imReconstruct = padarray(imReconstruct,[rowsIm-yr(end),colsIm-xr(end),stcksIm-zr(end)],minVal,'post');
+       Im2 = Im2 -imReconstruct;
+       figure(1);
+       s1 = subplot(nMax,3,(i-1)*nMax+1); imagesc(max(Im1,[],3)); colorbar;  
+       subplot(nMax,3,(i-1)*nMax+2); imagesc(max(imReconstruct,[],3)); colorbar; % caxis(s1.CLim);
+       subplot(nMax,3,(i-1)*nMax+3); imagesc(max(Im2,[],3));  colorbar; 
+       figure(10);
+    end
+    
 end
 
 
 dTable = [dTable,table(wx,wy,wz,a,b,xL,xU,yL,yU,zL,zU)];
-
+dTable.fitQuality = resRatio;
+    
 % filter 'spotlike' pars
 if pars.filterSpot
-keepSpots = (dTable.xU - dTable.xL < pars.maxUncert*pars.xyUnitConvert) ...
+    if ~isnan(dTable.xU)
+        keepSpots = (dTable.xU - dTable.xL < pars.maxUncert*pars.xyUnitConvert) ...
             & (dTable.yU - dTable.yL < pars.maxUncert*pars.xyUnitConvert) ...
             & (dTable.zU - dTable.zL < 2*pars.maxUncert*pars.zUnitConvert);
+    else
+        keepSpots = ~isnan(dTable.x);
+    end
 keepSpots = keepSpots & dTable.h ./ dTable.b >= pars.minHBratio;
 keepSpots = keepSpots & dTable.a ./ dTable.h >= pars.minAHratio;
 keepSpots = keepSpots & resRatio < pars.resRatio;
@@ -240,7 +281,11 @@ keepSpots = keepSpots & resRatio < pars.resRatio;
         resRatio %#ok<NOPRT>
         keepSpots  %#ok<NOPRT>   
     end
-    dTable = dTable(keepSpots,:);
+    if strcmp(pars.badSpots,'remove')  
+        dTable = dTable(keepSpots,:);
+    elseif strcmp(pars.badSpots,'nan')
+        dTable{~keepSpots,:} = nan;
+    end
 end
 
 if ~isempty(pars.boxCorner)
@@ -253,6 +298,7 @@ if ~isempty(pars.boxCorner)
     dTable.xU = dTable.xU + (pars.boxCorner(1)-1)*pars.xyUnitConvert;  % in nm
     dTable.yU = dTable.yU + (pars.boxCorner(2)-1)*pars.xyUnitConvert;  % in nm
     dTable.zU = dTable.zU + (pars.boxCorner(3)-1)*pars.zUnitConvert;  % in nm 
+
 end
 
 

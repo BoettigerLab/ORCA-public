@@ -1,12 +1,13 @@
-function [normByDist,normMap] = ComputeNormMap(refMap,varargin)
+function [normByDist,normMap,linfit] = ComputeNormMap(refMap,varargin)
 % normByDist - power law fit
 % normMap - normalized relative to median distance of each n-diag
+% see also 'NormMap
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'start','integer',4};
 defaults(end+1,:) = {'stop','integer',8};
 defaults(end+1,:) = {'method',{'powerlaw','median'},'powerlaw'};
-defaults(end+1,:) = {'power','float',0};
+defaults(end+1,:) = {'power','float',[0,1]};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 
@@ -23,7 +24,7 @@ pars = ParseVariableArguments(varargin,defaults,mfilename);
     medMap = normMap; 
     
     x=(1:nHybes-1)';
-    if pars.power == 0
+    if pars.power(1) == 0
         ftype = fittype('c*x+b','coeff',{'c','b'},'ind','x');
         xx = log10(x(pars.start:end-pars.stop));
         yy = log10(norm(pars.start:end-pars.stop));
@@ -34,7 +35,7 @@ pars = ParseVariableArguments(varargin,defaults,mfilename);
         y = x.^linfit.c*10^linfit.b;
         % figure(4); clf; loglog(norm); hold on; plot(x,y,'r.');
     else
-        y = x.^pars.power;
+        y = x.^pars.power(1)*10^pars.power(2);
     end
 
     % compute norm by distance

@@ -1,4 +1,7 @@
 function spotDataTable = ChrTracer3_FitAllSpots(fidSpots,datSpots,varargin)
+% fidSpots, a cell array Nspots x 1, of cell arrays, nHybs x 1 of 3D images
+% datSpots, a cell array Nspots x 1 of cell arrays, nHybs x nDaChns, of 3D
+%               image matrices.
 
 defaults = cell(0,3);
 % FitAllSpots default parameters
@@ -21,6 +24,7 @@ defaults(end+1,:) = {'eTable','freeType',[]};
 
 % Fiducial alignment defaults
 defaults(end+1,:) = {'upsample','positive',4};  % 8 for accuracy 2 for speed
+defaults(end+1,:) = {'upsampleZ','positive',4};  % 8 for accuracy 2 for speed
 defaults(end+1,:) = {'maxXYdrift','positive',4};
 defaults(end+1,:) = {'maxZdrift','positive',6};
 defaults(end+1,:) = {'fidRegTheta','nonnegative',.6};

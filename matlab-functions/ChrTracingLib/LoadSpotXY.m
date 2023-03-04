@@ -10,7 +10,7 @@ pars = ParseVariableArguments(varargin,defaults,mfilename);
 tableName = [saveFolder,'fov',num2str(pars.fov,'%03d'),pars.suffix];
 if exist(tableName,'file') 
        tableData = readtable(tableName);
-       regData = tableData{:,:};
+       regData = tableData{:,1:2};  % first columns are x and y, whatever the labels. 
 else
     regData = [];
 end

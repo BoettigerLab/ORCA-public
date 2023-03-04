@@ -8,7 +8,7 @@ function [hicLocal,ticks] = PlotRaoHiC(locusName,varargin)
 % figure(1); clf;
 % PlotRaoHiC('chr21:29372319-31372318','displayRes',5E3,'dataset','K562');
 % 
-% 
+%  All coordinates for these datasets are in hg19
 
 
 % globals
@@ -86,8 +86,10 @@ function hicMap = ReadRaoData(HiC_file,mapRes)
     for n=1:length(hicData(:,1))
         i = round(hicData(n,1)/mapRes);
         j = round(hicData(n,2)/mapRes);
-        hicMap(i,j) = hicData(n,3);
-        hicMap(j,i) = hicData(n,3);
+        if i > 0 && j > 0 && i < lenChr && j < lenChr
+            hicMap(i,j) = hicData(n,3);
+            hicMap(j,i) = hicData(n,3);
+        end
     end
 
 

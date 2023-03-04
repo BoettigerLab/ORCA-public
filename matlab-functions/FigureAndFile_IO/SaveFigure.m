@@ -95,6 +95,15 @@ if isempty(parameters.savePath)
 end
 
 % ------------------------------------------------------------------------
+% Check if still empty and error, to prevent writing figure to current
+% directory
+% ------------------------------------------------------------------------
+if isempty(parameters.savePath)
+    error('global figureSavePath not set yet.  Please specify a default savepath');
+end
+
+
+% ------------------------------------------------------------------------
 % Check for subFolder and make if necessary
 % ------------------------------------------------------------------------
 if ~isempty(parameters.subFolder)

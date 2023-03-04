@@ -5,7 +5,7 @@ function [uniqueInputValues,numOccurrences,indexes] = occurrences(A,varargin)
 % A is a NxM matrix containing N potentionally non-unique entries each
 % defined by M components. 
 % [v,n,i] = occurrences(A)  
-% 
+%  also return list of indices, i, such that v(i) = A 
 % 
 %--------------------------------------------------------------------------
 % Alistair Boettiger

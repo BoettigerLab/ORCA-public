@@ -3,6 +3,7 @@ function PlotPolymer(B,varargin)
 % Default variables
 % -------------------------------------------------------------------------
 defaults = cell(0,3);
+defaults(end+1,:) = {'axesHandle','handle',[]};
 defaults(end+1,:) = {'nodeColor', 'colormap', [0 0 0]};
 defaults(end+1,:) = {'linkColor', 'colormap', [0 0 1]};
 defaults(end+1,:) = {'bondColor', 'colormap', [1 0 0]};
@@ -41,14 +42,31 @@ end
 
 if parameters.showLinks && size(parameters.linkColor,1) < 2
     plot3(B(:,1),B(:,2),B(:,3),'color',parameters.linkColor,'LineWidth',parameters.linkWidth); hold on;
-else
-    hasData = find(~isnan(B(:,1)));
-    for n=1:length(hasData)-1      
-        i1 = hasData(n);
-        i2 = hasData(n+1);
+elseif  size(parameters.linkColor,1) == size(B,1)
+    % % for speed use patch. However this uses the axes colormap, and
+    % % sometimes we want to overlay multiple plots on the same axes with
+    % % different color maps. 
+    % patch([B(:,1); nan],[B(:,2); nan],[B(:,3); nan],[1:N, nan],'FaceColor','none','EdgeColor','interp')
+    % colormap(parameters.linkColor);
+    % hold on;
+
+    
+    %- Draw lines between adjacent points 
+    % if data is missing (NaNs) connect next spot that has data
+    noData = find(isnan(B(:,1))); 
+    clrChange = any(diff(parameters.linkColor,1,1),2);
+    plotNodes = [1;find(clrChange);N];
+    for n=1:length(plotNodes)-1      
+        i1 = plotNodes(n);
+        i2 = plotNodes(n+1);
+        is = i1:i2;
+        ix = ismember(is,noData);
+        is(ix) = [];
         c = floor(mean([i1,i2]));
-        plot3(B([i1,i2],1),B([i1,i2],2),B([i1,i2],3),'color',parameters.linkColor(c,:),'LineWidth',parameters.linkWidth);
-        hold on;       
+        plot3(B(is,1),B(is,2),B(is,3),'color',parameters.linkColor(c,:),'LineWidth',parameters.linkWidth);
+        if n==1
+            hold on;   
+        end
     end    
 end
   

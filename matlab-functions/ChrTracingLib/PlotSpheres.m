@@ -50,8 +50,10 @@ end
 [sx,sy,sz] = sphere(parameters.subDivisions);
 
 for k =1:size(d,1)
-    surf(r(k)*sx+d(k,1),r(k)*sy+d(k,2),r(k)*sz+d(k,3),...
-        'EdgeColor','none','FaceColor',clr(k,:),'FaceAlpha',alphas(k)); hold on;
+    if ~isnan(d(k,1))
+        surf(r(k)*sx+d(k,1),r(k)*sy+d(k,2),r(k)*sz+d(k,3),...
+            'EdgeColor','none','FaceColor',clr(k,:),'FaceAlpha',alphas(k)); hold on;
+    end
 end
    
 if parameters.lightingOn

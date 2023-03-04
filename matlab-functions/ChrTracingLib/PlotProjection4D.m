@@ -33,6 +33,7 @@ defaults(end+1,:) = {'fits','freeType',[]};
 defaults(end+1,:) = {'xyzNames','cell',{}}; % {'xc','yc','zc'}
 defaults(end+1,:) = {'nmXYpix','positive',154};
 defaults(end+1,:) = {'nmZpix','positive',100};
+defaults(end+1,:) = {'MarkerSize','positive',20};
 % parse defaults
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
@@ -83,13 +84,13 @@ if strcmp(pars.mode,'subplots')
            isN = fits.idx > 2;
            axes(panelsDatxy(h)); hold on;  
            if strcmp(pars.projection,'xy')
-            plot(fits.x(isH & is1)/pars.nmXYpix,fits.y(isH & is1)/pars.nmXYpix,'yo','MarkerSize',15);
-            plot(fits.x(isH & is2)/pars.nmXYpix,fits.y(isH & is2)/pars.nmXYpix,'ys','MarkerSize',15);
-            plot(fits.x(isH & isN)/pars.nmXYpix,fits.y(isH & isN)/pars.nmXYpix,'y>','MarkerSize',15);
+            plot(fits.x(isH & is1)/pars.nmXYpix,fits.y(isH & is1)/pars.nmXYpix,'yo','MarkerSize',pars.MarkerSize);
+            plot(fits.x(isH & is2)/pars.nmXYpix,fits.y(isH & is2)/pars.nmXYpix,'ys','MarkerSize',pars.MarkerSize);
+            plot(fits.x(isH & isN)/pars.nmXYpix,fits.y(isH & isN)/pars.nmXYpix,'y>','MarkerSize',pars.MarkerSize);
            else
-            plot(fits.x(isH & is1)/pars.nmXYpix,fits.z(isH & is1)/pars.nmZpix,'yo','MarkerSize',15);
-            plot(fits.x(isH & is2)/pars.nmXYpix,fits.z(isH & is2)/pars.nmZpix,'ys','MarkerSize',15);
-            plot(fits.x(isH & isN)/pars.nmXYpix,fits.z(isH & isN)/pars.nmZpix,'y>','MarkerSize',15);
+            plot(fits.x(isH & is1)/pars.nmXYpix,fits.z(isH & is1)/pars.nmZpix,'yo','MarkerSize',pars.MarkerSize);
+            plot(fits.x(isH & is2)/pars.nmXYpix,fits.z(isH & is2)/pars.nmZpix,'ys','MarkerSize',pars.MarkerSize);
+            plot(fits.x(isH & isN)/pars.nmXYpix,fits.z(isH & isN)/pars.nmZpix,'y>','MarkerSize',pars.MarkerSize);
            end
         end
     end
@@ -109,14 +110,23 @@ else
            is1 = fits.idx == 1;
            is2 = fits.idx == 2;
            isN = fits.idx > 2;
-           if strcmp(pars.projection,'xy')
-            plot(labelOffsets(h,1) + fits.x(isH & is1)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & is1)/pars.nmXYpix,'yo','MarkerSize',15);
-            plot(labelOffsets(h,1) + fits.x(isH & is2)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & is2)/pars.nmXYpix,'ys','MarkerSize',15);
-            plot(labelOffsets(h,1) + fits.x(isH & isN)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & isN)/pars.nmXYpix,'y>','MarkerSize',15);
+           if any(strcmp(fits.Properties.VariableNames,'reject'))
+               isRj = fits.reject;
            else
-            plot(labelOffsets(h,1) + fits.x(isH & is1)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & is1)/pars.nmZpix,'yo','MarkerSize',15);
-            plot(labelOffsets(h,1) + fits.x(isH & is2)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & is2)/pars.nmZpix,'ys','MarkerSize',15);
-            plot(labelOffsets(h,1) + fits.x(isH & isN)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & isN)/pars.nmZpix,'y>','MarkerSize',15);
+               isRj = true(size(isH));
+           end
+           if strcmp(pars.projection,'xy')
+            plot(labelOffsets(h,1) + fits.x(isH & is1)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & is1)/pars.nmXYpix,'yo','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & is2)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & is2)/pars.nmXYpix,'ys','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & isN)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & isN)/pars.nmXYpix,'y>','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & is1 & isRj)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & is1 & isRj)/pars.nmXYpix,'ro','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & is2 & isRj)/pars.nmXYpix,labelOffsets(h,2) + fits.y(isH & is2 & isRj)/pars.nmXYpix,'rs','MarkerSize',pars.MarkerSize);
+           else
+            plot(labelOffsets(h,1) + fits.x(isH & is1)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & is1)/pars.nmZpix,'yo','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & is2)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & is2)/pars.nmZpix,'ys','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & isN)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & isN)/pars.nmZpix,'y>','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & is1 & isRj)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & is1 & isRj)/pars.nmZpix,'ro','MarkerSize',pars.MarkerSize);
+            plot(labelOffsets(h,1) + fits.x(isH & is2 & isRj)/pars.nmXYpix,labelOffsets(h,2) + fits.z(isH & is2 & isRj)/pars.nmZpix,'rs','MarkerSize',pars.MarkerSize);
            end
         end
    end 

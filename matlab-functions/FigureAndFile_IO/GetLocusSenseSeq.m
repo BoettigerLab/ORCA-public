@@ -20,14 +20,14 @@ defaults(end+1,:) = {'hg19_transcripts','string','U:\GenomeData\GenomeAssemblies
 defaults(end+1,:) = {'hg38_transcripts','string','U:\GenomeData\GenomeAssemblies\hg38\hg38_gencodeV25.txt'};
 defaults(end+1,:) = {'mm9_transcripts','string','U:\GenomeData\GenomeAssemblies\mm9\mm9_genes.txt'};
 defaults(end+1,:) = {'mm10_transcripts','string','U:\GenomeData\GenomeAssemblies\mm10\mm10_NascentTranscripts.txt'}; % mm10_NascentTranscripts,'U:\GenomeData\GenomeAssemblies\mm10\mm10_NascentTranscripts.txt');
-defaults(end+1,:) = {'dm3_transcripts','string','C:\Data\Fly\dm3\dm3_NascentRNA.txt'};
+defaults(end+1,:) = {'dm3_transcripts','string','U:\GenomeData\GenomeAssemblies\dm3\dm3_NascentRNA.txt'}; % 'C:\Data\Fly\dm3\dm3_NascentRNA.txt'
 defaults(end+1,:) = {'ce11_transcripts','string','U:\GenomeData\GenomeAssemblies\ce11\ce11_NascentRNA.txt'};
 % genome files
 defaults(end+1,:) = {'hg19_fasta','string','U:\GenomeData\GenomeAssemblies\hg19\hg19.fasta'};
 defaults(end+1,:) = {'hg38_fasta','string','U:\GenomeData\GenomeAssemblies\hg38\hg38.fasta'};
 defaults(end+1,:) = {'mm9_fasta','string','U:\GenomeData\GenomeAssemblies\mm9\mm9.fasta'};
 defaults(end+1,:) = {'mm10_fasta','string','U:\GenomeData\GenomeAssemblies\mm10\mm10.fasta'};
-defaults(end+1,:) = {'dm3_fasta','string','C:\Data\Fly\dm3\dm3.fasta'};
+defaults(end+1,:) = {'dm3_fasta','string','U:\GenomeData\GenomeAssemblies\dm3\dm3.fasta'};%  'C:\Data\Fly\dm3\dm3.fasta'
 defaults(end+1,:) = {'ce11_fasta','string','U:\GenomeData\GenomeAssemblies\ce11\ce11.fasta'};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 

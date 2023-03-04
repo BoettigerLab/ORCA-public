@@ -136,7 +136,7 @@ for h=hybs % loop over target hybes
             regData(h) = CorrAlignFast(h1,h2,'showplot',showplot,'parameters',pars); %#ok<AGROW>
             if pars.showCorrAlign
                 if pars.saveFigs
-                    SaveFigure(f30,'name',['CorrAlign',filesep,'CorrAlign_fov',num2str(pars.fov,'%04d'),'_h',num2str(h,'%04d')],'formats',{'png'},'verbose',pars.veryVerbose);
+                    SaveFigure(f30,'name',['CorrAlign',filesep,'CorrAlign_fov',num2str(pars.fov,'%04d'),'_h',num2str(h,'%04d')],'formats',{'png'},'verbose',pars.veryVerbose,'overwrite',true);
                 end
                 pause(.1); 
             end

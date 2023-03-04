@@ -87,7 +87,7 @@ end
 
 %% Check if data is already written
 % convert annotations of all frames
-isFidChn = GetFidChnFromTable(eTable);
+
 
 
 selectFOVs = pars.selectFOVs;
@@ -105,6 +105,7 @@ if ~skip
         disp('this may take some time...');
     end
     for h=1:numHybes 
+        isFidChn = GetFidChnFromTable(eTable,'hyb',h);  % ChrTracer3 now allows changes in file size
         currFolder = [dataFolders{h},'\',hybFolders{h},'\'];
         daxFiles =  cellstr(ls([currFolder,daxRoots{h}]));
         for f=selectFOVs
@@ -114,7 +115,7 @@ if ~skip
                 if pars.maxProject
                     maxName = ['fidMax_',daxFiles{f}];
                     maxFile = [currFolder,maxName];
-                    if exist(maxFile,'file')
+                    if exist(maxFile,'file') && ~pars.overwrite
                         dax = ReadDax(maxFile,'verbose',pars.veryverbose);
                     else
                         [dax,infoFile] = ReadDax(currDax,'verbose',pars.veryverbose);
@@ -123,7 +124,7 @@ if ~skip
                             infoOut = infoFile;
                             infoOut.number_of_frames= 1;
                             infoOut.localName = regexprep(maxName,'.dax','.inf');
-                            WriteDAXFiles(dax,infoOut,'verbose',pars.veryverbose);
+                            WriteDAXFiles(dax,infoOut,'verbose',pars.veryverbose,'confirmOverwrite',false); % WriteDax
                         end
                     end  
                 else

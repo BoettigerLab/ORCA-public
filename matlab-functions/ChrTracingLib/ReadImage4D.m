@@ -31,6 +31,8 @@ defaults(end+1,:) = {'fits','freeType',[]};
 defaults(end+1,:) = {'xyzNames','cell',{}}; % {'xc','yc','zc'}
 defaults(end+1,:) = {'nmXYpix','positive',154};
 defaults(end+1,:) = {'nmZpix','positive',100};
+defaults(end+1,:) = {'figHandle','freeType',0};
+defaults(end+1,:) = {'MarkerSize','positive',20};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 % Read info file
@@ -68,10 +70,18 @@ if pars.loadTable
 else
     datTable = [];
 end
-if pars.showPlots
+if pars.showPlots 
+    if pars.figHandle == 0
+        f1 = figure();
+        f2 = figure();
+    else
+        f1 = pars.figHandle(1);
+        f2 = pars.figHandle(2);
+    end
+    
     %% new version
-    figure(); PlotProjection4D(datMat,'projection','xy','fits',datTable,'parameters',pars);
-    figure(); PlotProjection4D(datMat,'projection','xz','fits',datTable,'parameters',pars);
+    figure(f1); PlotProjection4D(datMat,'projection','xy','fits',datTable,'parameters',pars);
+    figure(f2); PlotProjection4D(datMat,'projection','xz','fits',datTable,'parameters',pars);
 %     %% old version
 %     figure(); 
 %     datMatXY = squeeze(max(datMat,[],3));

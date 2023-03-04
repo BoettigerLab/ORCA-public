@@ -24,7 +24,7 @@ function [alignValues,pars] = CorrAlignFast(im1,im2,varargin)
 defaults = cell(0,3);
 defaults(end+1,:) = {'maxSize', 'positive', 400}; % rescale all images to this size for alignment. set to 'inf' to skip to step alignment
 defaults(end+1,:) = {'fineBox', 'freeType', []};  % perform fine scale alignment using a box of this size around the brightest point.
-defaults(end+1,:) = {'fineUpsample', 'positive', 3};  % 
+defaults(end+1,:) = {'fineUpsample', 'positive', 1};  % 
 defaults(end+1,:) = {'maxShift', 'nonnegative', inf};
 defaults(end+1,:) = {'gradMax', 'boolean', true};
 defaults(end+1,:) = {'minGrad', 'float', -inf};
@@ -39,7 +39,7 @@ defaults(end+1,:) = {'showplot', 'boolean', true};
 defaults(end+1,:) = {'fastDisplay', 'boolean', true};
 defaults(end+1,:) = {'displayWidth', 'integer', 500};
 defaults(end+1,:) = {'showExtraPlot', 'boolean', false};
-defaults(end+1,:) = {'minFineImprovement', 'float', .3}; % the correlation coefficient of the fine scale alignment must be at least this fold greater than that of the coarse scale alignment to be used. Otherwise only coarse alignment is used
+defaults(end+1,:) = {'minFineImprovement', 'float', .1}; % the correlation coefficient of the fine scale alignment must be at least this fold greater than that of the coarse scale alignment to be used. Otherwise only coarse alignment is used
 defaults(end+1,:) = {'label1', 'string', ''};
 defaults(end+1,:) = {'label2', 'string', ''};
 % -------------------------------------------------------------------------
@@ -87,7 +87,8 @@ if relSpeed > 1
     else
         scales = 1;
     end
-    [alignValues1,car1]=CorrAlignRotateScale(im1s,im2s,'parameters',pars,...
+    [alignValues1,car1]=CorrAlignRotateScale(im1s,im2s,...
+        'parameters',pars,...
         'maxShift',pars.maxShift/relSpeed,...
         'showplot',pars.showExtraPlot,...
         'scales',scales,...
@@ -102,9 +103,12 @@ if relSpeed > 1
         % No rotation requested, we can pick a region with lots of data:
         % Downsampling also finds a region with substantial
         % data and not just a single bright pixel.
-        subpix = 3;
-        speedScale = max([0.05,1/(2*relSpeed*subpix)]);
-        im3 = imresize(im2b,speedScale); % imresize(im1,speedScale).*
+        subpix = 5; % 
+        speedScale = max([0.01,1/(2*relSpeed*subpix)]);
+        im3 = double(imresize(im1,speedScale)).*double(imresize(im2b,speedScale)); %  
+%         figure(1); clf; subplot(1,3,1); imagesc(imresize(im1,speedScale)); colorbar;
+%         subplot(1,3,2); imagesc(imresize(im2b,speedScale)); colorbar;
+%         subplot(1,3,3); imagesc(im3); title('comb'); colorbar;
         [~,indmax] =  max(im3(:));
         [cy,cx] = ind2sub(size(im3),indmax);
         cy = round(cy/speedScale);  cx = round(cx/speedScale);
@@ -126,6 +130,7 @@ if relSpeed > 1
         figure(32); clf;
     end
     [alignValues2,car2]=CorrAlignRotateScale(im1z,im2z,...
+        'parameters',pars,...
         'angles',pars.fineAngles,...
         'scales',pars.fineScales,...
         'maxShift',round(relSpeed)+pars.fineMaxShift,...
@@ -203,7 +208,8 @@ if relSpeed > 1
         im3 = cat(3,im1(y1:y2,x1:x2),im2c_show);
         sp4 = subplot(2,2,4); 
         im_sp4 = Ncolor(IncreaseContrast(im3,'high',.999));
-        imagesc(sp4,relSpeed*(x1:x2),relSpeed*(y1:y2),im_sp4);
+        imagesc(sp4,(x1:x2),(y1:y2),im_sp4);
+        % imagesc(sp4,relSpeed*(x1:x2),relSpeed*(y1:y2),im_sp4);
         % im3 = cat(3,im1,im2b); % for troubleshooting. 
        %  subplot(2,2,2); Ncolor(IncreaseContrast(im3,'high',.999));
         if ~fineAlignFail
