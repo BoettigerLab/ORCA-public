@@ -1,4 +1,5 @@
 # Analysis Routines for Optical Reconstruction of Chromatin Architecture 
+[![DOI](https://zenodo.org/badge/135475970.svg)](https://zenodo.org/badge/latestdoi/135475970)
 
 ## Welcome
 This repository contains code written primarily in Matlab for the analysis of microscopy data for optical reconstruction of chromatin architecture as described in our manuscript on Optical Reconstruction of Chromatin Architecture (Mateo et al 2019, Nature) and the updated version of this code provided with our protocol [paper](http://dx.doi.org/10.1038/s41596-020-00478-x) (Mateo et al 2021).  
