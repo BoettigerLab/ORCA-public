@@ -42,8 +42,14 @@ for i = 1:numLoci
          else
              chr{i} = locusname(1:s-1);
          end
-         locusStart(i) = str2double(locusname(s+1:sep-1));
-         locusEnd(i) = str2double(locusname(sep+1:end));
+         if isempty(sep)
+             sep  = length(locusname)+1;
+             locusStart(i) = str2double(locusname(s+1:sep-1));
+             locusEnd(i) = nan;
+         else
+             locusStart(i) = str2double(locusname(s+1:sep-1));
+             locusEnd(i) = str2double(locusname(sep+1:end));
+         end
      else
          nameparts = strsplit(locusname,',');
          chr{i} = nameparts{1};

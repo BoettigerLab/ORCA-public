@@ -83,37 +83,44 @@ chrom = cell(numProbes,1);
 for  i=1:length(libProbes)  
     if ~isempty(blastData(i).Hits)
         try
-        hitName = strsplit(blastData(i).Hits(1).Name,'|');
-        chr = hitName{2};
-        chrom{i} = chr;
-        coords = blastData(i).Hits(1).HSPs.SubjectIndices;
-        % nameparts = strsplit(blastData(i).Query,'__');
-        % read{i} = nameparts{3};
-        % r = str2double(regexprep(read{i},{'Read','read','Stv_','B188','B189'},{'','','','',''})) - firstRead + 1; 
-        r = readInds(i);
-        if coords(2) > coords(1)
-            chromStart(i) = coords(1);
-            chromEnd(i) = coords(2);    
-            strand{i} = '+';
-        else
-            chromStart(i) = coords(2);
-            chromEnd(i) = coords(1);
-            strand{i} = '-';
-        end
-        probeFullName = regexprep(blastData(i).Query, {'\.',' '},{'',''});
-        nameparts = strsplit(probeFullName,'__');
-        if length(nameparts) == 5
-            targetNameParts = strsplit(nameparts{4},'_');
-            nameShort = [nameparts{3},'_',targetNameParts{end}];
-        else
-            nameShort = probeFullName;
-        end
-        name{i} = nameShort;
-        itemRgb{i} = [num2str(readColor(r,1)),',',num2str(readColor(r,2)),',',num2str(readColor(r,3))];
+            hitName = strsplit(blastData(i).Hits(1).Name,'|');
+            try
+                chr = hitName{2};
+            catch
+                chr = hitName{1}; % dealing with different name formats in blastData 
+            end
+            chrom{i} = chr;
+            coords = blastData(i).Hits(1).HSPs.SubjectIndices;
+            % nameparts = strsplit(blastData(i).Query,'__');
+            % read{i} = nameparts{3};
+            % r = str2double(regexprep(read{i},{'Read','read','Stv_','B188','B189'},{'','','','',''})) - firstRead + 1; 
+            r = readInds(i);
+            if isnan(r)
+                continue
+            end
+            if coords(2) > coords(1)
+                chromStart(i) = coords(1);
+                chromEnd(i) = coords(2);    
+                strand{i} = '+';
+            else
+                chromStart(i) = coords(2);
+                chromEnd(i) = coords(1);
+                strand{i} = '-';
+            end
+            probeFullName = regexprep(blastData(i).Query, {'\.',' '},{'',''});
+            nameparts = strsplit(probeFullName,'__');
+            if length(nameparts) == 5
+                targetNameParts = strsplit(nameparts{4},'_');
+                nameShort = [nameparts{3},'_',targetNameParts{end}];
+            else
+                nameShort = probeFullName;
+            end
+            name{i} = nameShort;
+            itemRgb{i} = [num2str(readColor(r,1)),',',num2str(readColor(r,2)),',',num2str(readColor(r,3))];
         catch er
             warning(er.getReport);
             disp('place debug here'); 
-            error('problem here');
+            error(er.message);
         end
     end
 end
@@ -150,4 +157,6 @@ writetable(libBed,datafile,'delimiter','\t','WriteVariableNames',false);
 [~,~] = system(['copy /b ',headerfile,'+',datafile,' ',bedfile]);
 delete(datafile);
 delete(headerfile);
+
+disp(['wrote ',datafile]);
 

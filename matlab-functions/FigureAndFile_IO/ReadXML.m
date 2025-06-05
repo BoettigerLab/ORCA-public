@@ -131,11 +131,17 @@ end
 function [flagName,flagProps,flagStop] = ParseFlag(T,ln,pars) %#ok<INUSD>
     % parse xml flag
    flagStart = strfind(T(ln,:),'<');
+   if length(flagStart) > 1 % take first occurrence if multiple
+       flagStart = flagStart(1);
+   end
    isComment = strcmp(T(ln,flagStart+1),'!');
    if isComment
        flagName = ''; flagProps = []; flagStop=0;
    else
        flagStop = strfind(T(ln,flagStart:end),'>') + flagStart-1;
+       if length(flagStop) > 1 % take first occurrence if multiple
+            flagStop = flagStop(1);
+       end
        flagInfo = T(ln,flagStart+1:flagStop-1);
        flagParts = strsplit(flagInfo);
        % parse parts of flag Info

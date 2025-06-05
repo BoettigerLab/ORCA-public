@@ -24,7 +24,7 @@ defaults = cell(0,3);
 defaults(end+1,:) = {'verbose', 'boolean',true};
 defaults(end+1,:) = {'overwrite', 'boolean',false};
 defaults(end+1,:) = {'maxProject', 'boolean',false};
-defaults(end+1,:) = {'channel', 'integer',0};
+defaults(end+1,:) = {'channel', 'integer',0}; % 0 = load all.  otherwise [1,3] loads first and third
 defaults(end+1,:) = {'skipFirst', 'integer',0};
 defaults(end+1,:) = {'writeData', 'boolean',true};  
 defaults(end+1,:) = {'justImProps', 'boolean',false};  
@@ -32,8 +32,10 @@ defaults(end+1,:) = {'driftFolder', 'string',''};  % if empty no drift correct, 
 defaults(end+1,:) = {'hyb', 'integer',0}; % extract from folder name by default
 pars = ParseVariableArguments(varargin,defaults,mfilename); 
 
-
+daxFileName = regexprep(daxFileName,{'.xml','.inf'},{'.dax','.dax'}); % allow xml of inf input
 xmlFile = regexprep(daxFileName,'.dax','.xml');
+xmlFile = regexprep(xmlFile,'_C1',''); % remove camera flags;
+xmlFile = regexprep(xmlFile,'_C2',''); % remove camera flags;
 if exist(xmlFile,'file')
     xmlStruct = ReadXML(xmlFile);
 else
@@ -126,7 +128,7 @@ imProps.Hyb = str2double(nameParts{end});
 % autodetect channel names from shutters
 shutterName =           xmlStruct.settings.illumination.shutters;
 [~,shutter] = fileparts(shutterName);
-shutter = regexprep(shutter,{'shutters_','_series'},{'',''});
+shutter = regexprep(shutter,{'shutters_','_series','_parallel'},{'','',''});
 shutter = regexprep(shutter,'confocal_',''); % confocal flag is not a channel
 imProps.chnNames = strsplit(shutter,'_');
 imProps.nChns = length(imProps.chnNames);

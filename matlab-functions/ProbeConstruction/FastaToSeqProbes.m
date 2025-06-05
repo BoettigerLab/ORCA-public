@@ -1,4 +1,4 @@
-function [probeFasta,targetRegions,probeSets,cuts] = FastaToSeqProbes(regionFasta,~,varargin)
+function [probeFasta,targetRegions,probeSets,insufficientProbe,cuts] = FastaToSeqProbes(regionFasta,~,varargin)
 % takes a fasta file which is already chunked into blocks (e.g. separate
 % chromsome segments for ORCA, or separate genes for sequential RNA FISH)
 % and designs a tile of probes for each block. Probes are selected to meet
@@ -13,13 +13,15 @@ function [probeFasta,targetRegions,probeSets,cuts] = FastaToSeqProbes(regionFast
 % Install Notes
 % 
 % currReadouts = 'C:\Data\Oligos\CommonOligos\Adapters1_readouts001-384.fasta' % introduced ~6/30/20 
-currReadouts = 'C:\Data\Oligos\CommonOligos\v2_Adapters1_readouts001-384.fasta';  % introduced 9/30/20 
+% currReadouts = 'C:\Data\Oligos\CommonOligos\v2_Adapters1_readouts001-384.fasta';  % introduced 9/30/20 
+% currReadouts = 'C:\Data\Oligos\CommonOligos\v5_Adapters1_readouts001-384_230406.fasta'; % introduced 04/0/23
+currReadouts = 'U:\Data\Oligos\CommonOligos\v6_Adapters1_readouts001-384_240212.fasta'; % introduced 04/0/23
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'verbose', 'boolean', true}; 
 defaults(end+1,:) = {'veryVerbose', 'boolean', false}; 
-defaults(end+1,:) = {'fwdPrimers', 'fasta', fastaread('C:\Data\Oligos\CommonOligos\FwdPrimers.fasta')}; % FwdPrimers
-defaults(end+1,:) = {'revPrimers', 'fasta', fastaread('C:\Data\Oligos\CommonOligos\RevPrimers.fasta')}; % RevPrimers
+defaults(end+1,:) = {'fwdPrimers', 'fasta', fastaread('U:\Data\Oligos\CommonOligos\FwdPrimers.fasta')}; % FwdPrimers
+defaults(end+1,:) = {'revPrimers', 'fasta', fastaread('U:\Data\Oligos\CommonOligos\RevPrimers.fasta')}; % RevPrimers
 defaults(end+1,:) = {'secondaries', 'fasta', fastaread(currReadouts)}; % ReadoutSeqs
 defaults(end+1,:) = {'commonRT', 'string', 'catcaacgccacgatcagct'};  % 20 bp complimentary to P4-405 end. 
 defaults(end+1,:) = {'repeatFasta', 'string', ''}; 
@@ -41,7 +43,7 @@ defaults(end+1,:) = {'locusGeneName','string',''};
 defaults(end+1,:) = {'numCompete','integer',1}; % obsolete.
 defaults(end+1,:) = {'repeatOTrange','array', [-1 0]};  % [-1 0])
 defaults(end+1,:) = {'secOTrange','array', [-1 0]};  % [-1 0])
-defaults(end+1,:) = {'genOTrange','array', [-1 1]};  % [-1 0])
+defaults(end+1,:) = {'genOTrange','array', [-1 30]};  % [-1 0])
 defaults(end+1,:) = {'repeatOTmatch','integer', 14};  % 
 defaults(end+1,:) = {'secOTmatch','integer', 12};  % 
 defaults(end+1,:) = {'specMatch','integer', 15};  %
@@ -51,7 +53,8 @@ defaults(end+1,:) = {'parallel','integer',1};
 defaults(end+1,:) = {'noOverlap','boolean',true}; % minimize overlap based on threePrime space (if false returns all probes)
 defaults(end+1,:) = {'threePrimeSpace','float',0}; % add extra space between probes or remove space between probes. 
 defaults(end+1,:) = {'showCuts','boolean',false}; % For troubleshooting probe loss.
-defaults(end+1,:) = {'fiducialNoTruncate','integer',0}; % For troubleshooting probe loss.
+defaults(end+1,:) = {'fiducialNoTruncate','integer',0}; % this readout number will not be truncated to the max probes (typically =1 if the fiducial is in the first probe) 
+defaults(end+1,:) = {'doubleReadout','boolean',false}; % tandem copies of the barcode/secondary sequence
 % -------------------------------------------------------------------------
 % Parse necessary input
 % -------------------------------------------------------------------------
@@ -286,7 +289,7 @@ try
     subplot(2,2,3); plot(targetRegions(c).GC); title('GC distribution');
     % subplot(2,2,3); plot(targetRegions(c).penalties); title('penality profile');
     subplot(2,2,4); plot(targetRegions(c).specificity); title(['Specificity profile N=',num2str(targetNumRegions(c))]);
-    SaveFigure(sampleFig,'name',['sampleFig_',targetRegions(c).geneName],'formats',{'png'},'overwrite',true);
+%    SaveFigure(sampleFig,'name',['sampleFig_',targetRegions(c).geneName],'formats',{'png'},'overwrite',true);
 
     % profile averaged across all probe sets. 
     segLength = mean(cellfun(@length,{regionFastaData.Sequence}));
@@ -323,7 +326,7 @@ readoutSeqs = parameters.secondaries(parameters.offsetSecondaries+1:end);
 % Description of probes:  Design 1: 
 %                  30 nt           30 nt
 % 3'            P4-Alexa405, A647-readout-n, 
-% 5' FwdIndex, cy3-commonRT, TruncStevenSecondary, targetRegion, RevIndex
+% 5' FwdIndex, cy3-commonRT, TruncSecondaryBarcode, targetRegion, RevIndex
 %       20 nt,     20 nt,         20 nt,             40 nt,       20 nt,   total: 120 
 
 d = parameters.startPrimer - 1 + parameters.fwdPrimerIndex; % primer counter
@@ -364,10 +367,15 @@ for k=1:numDomains
         common = '';
         fwd = lower(parameters.fwdPrimers(d).Sequence);
     end
-    probeSeqs{c} = strcat(...,
+    readSeq = upper( seqrcomplement(readoutSeqs(r).Sequence(1:20)) );
+    if parameters.doubleReadout
+        readSeq = [readSeq,readSeq];
+    end
+
+    probeSeqs{c} = strcat(...
         fwd,...
         common,...
-        upper( seqrcomplement(readoutSeqs(r).Sequence(1:20)) ),...  Sequence(end-19:end) this is causing confusion will change 
+        readSeq,...  Sequence(end-19:end) this is causing confusion will change 
         cellfun(@lower,targetingSeqs,'UniformOutput',false),...
         upper(seqrcomplement(parameters.revPrimers(d+o).Sequence))  );
     if isempty(parameters.readNames)
@@ -386,7 +394,8 @@ for k=1:numDomains
     end
     namebits = strsplit(readoutSeqs(r).Header,'_');
     barcodeName = namebits{1};
-    probeNames{c} =  strcat([parameters.fwdPrimers(d).Header,...
+    probeNames{c} =  strcat(...
+        [parameters.fwdPrimers(d).Header,...
         commonTag,...
         '__',barcodeName,readName,...
         '__',targetRegions(c).geneName,...

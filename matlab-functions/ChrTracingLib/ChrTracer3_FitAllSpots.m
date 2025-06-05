@@ -115,6 +115,7 @@ if pars.numParallel < 2
         end
     end
 else
+    % parpool specification got removed..
     parfor s=selectSpots
         fidSpts = fidSpots{s};
         datSpts = datSpots{s};

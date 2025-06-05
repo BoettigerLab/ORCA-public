@@ -7,17 +7,36 @@ function [mosaic,uls] = TilesToMosaic(imTiles,uls,varargin)
 % uls is a Nx2 list of upper left positions
 defaults = cell(0,3);
 defaults(end+1,:) = {'method',{'mean','sum','edgeBlur','last','first'},'edgeBlur'};
-defaults(end+1,:) = {'padMosaic','nonnegative',0}; % pad on both sides in multiples of tile size
+defaults(end+1,:) = {'padMosaic','nonnegative',1}; % pad on both sides in multiples of tile size
 defaults(end+1,:) = {'downsample','positive',1}; % downsample this fold. 1=no downsampling
 defaults(end+1,:) = {'mosaicSize','float',[0,0]}; % if uls have aleady been aligned to some common reference frame, we don't want to disrupt that
 defaults(end+1,:) = {'verbose','boolean',false};
 defaults(end+1,:) = {'rezero','boolean',true}; % not sure this is useful - may fix value and remove option in future.  
+defaults(end+1,:) = {'flipV','boolean',false};
+defaults(end+1,:) = {'flipH','boolean',false};
+defaults(end+1,:) = {'transpose','boolean',false};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
-
-% -------- Downsample for fast display if requested
 nTiles = length(imTiles);
 uls_in = uls;
+
+% ---- flip if requested
+if pars.flipV || pars.flipH || pars.transpose
+    for m=1:nTiles
+        if pars.flipV
+            imTiles{m} = flipud(imTiles{m});
+        end
+        if pars.flipH
+            imTiles{m} = fliplr(imTiles{m});
+        end
+        if pars.transpose
+            imTiles{m} = imTiles{m}';
+        end
+    end
+end
+
+% -------- Downsample for fast display if requested
+
 if pars.downsample~=1
     if pars.verbose
         disp('compressing images...');

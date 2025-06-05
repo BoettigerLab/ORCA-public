@@ -18,14 +18,19 @@ defaults(end+1,:) = {'parallel','integer',1};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 allFitFiles = FindFiles([dataFolder,'*AllFits.csv']);
+if isempty(allFitFiles)
+    error(['no data found in ' dataFolder]);
+end
 nFits = length(allFitFiles);
 polys = cell(nFits,1);
 maps = cell(nFits,1);
 spotData = cell(nFits,1);
 if pars.parallel == 1
     for f=1:nFits % f=1
+        [~,fileName] = fileparts(allFitFiles{f});
+        ff = str2double(regexprep(fileName,{'fov','_AllFits'},{'',''}));
         [polys{f},maps{f},spotXY] = TableToPolymer(allFitFiles{f},'parameters',pars);
-        spotData{f} = [f*ones(size(spotXY,1),1),spotXY];
+        spotData{f} = [ff*ones(size(spotXY,1),1),spotXY];
         if pars.showPlots > 0
             figure(pars.showPlots); clf; 
             imagesc(nanmedian(maps{f},3)); colorbar; caxis([0,800]); 

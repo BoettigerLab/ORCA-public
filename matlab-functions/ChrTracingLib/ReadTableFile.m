@@ -16,8 +16,13 @@ defaults(end+1,:) = {'verbose','boolean',false};
 defaults(end+1,:) = {'delimiter',{' ','\t'},'\t'};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
-[~,object,~] = fileparts(filename);
+[~,object,ftype] = fileparts(filename);
 txtFile = [pars.scratchFolder,object,'.txt'];
+
+if ~exist(filename,'file')
+    error([filename 'not found'])
+end
+
 if exist(txtFile,'file') && pars.overwrite
     delete(txtFile);
 end

@@ -1,7 +1,7 @@
 function [spotTablePerRead,cellProj,cropSpotsPerRead] = SpotsInCellsFromDax(cellBorders,fov,eTableXLS,varargin)
-% Inputs
+%% Inputs
 %
-%  Outputs
+%%  Outputs
 %     spotTablePerRead  - table of fitted spot locations in FOV
 %     cellProj          - cell array, nCells x nHybes x nRperHyb x 2
 %                         filtered xy and xz projections if each nuc
@@ -11,6 +11,11 @@ function [spotTablePerRead,cellProj,cropSpotsPerRead] = SpotsInCellsFromDax(cell
 %
 % maybe this should be a class / app where the child function parameters
 % could be handled differently.
+% 
+%% Related functions
+% SegmentSpotsPerNuleus  (preferred?) 
+% SpotsIn Nucleus
+% 
 
 defaults = cell(0,3);
 % self parameters

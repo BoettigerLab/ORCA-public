@@ -46,13 +46,16 @@ function[h,L,MX,MED]=violin(X,varargin)
 
  
  defaults = cell(0,3);
+defaults(end+1,:) = {'xOffset','integer',0};
 defaults(end+1,:) = {'lineColor','freeType','k'};
 defaults(end+1,:) = {'faceColor','freeType',[.5 .5 .5]};
 defaults(end+1,:) = {'alpha','fraction',1};
 defaults(end+1,:) = {'meanColor','freeType','k'};
 defaults(end+1,:) = {'medColor','freeType','r'};
 defaults(end+1,:) = {'plotMean','boolean',true};
+defaults(end+1,:) = {'medianStyle','cell',{}};
 defaults(end+1,:) = {'variableNames','cell',{''}};
+defaults(end+1,:) = {'nonnegative','boolean',false};
 defaults(end+1,:) = {'method',{'linear','nearest','next','pchip','cubic','makima','spline'},'linear'};
 defaults(end+1,:) = {'bandwidth','positive',.05}; % on the scale of the data
 pars = ParseVariableArguments(varargin,defaults,mfilename);
@@ -78,6 +81,12 @@ nData = size(X,2);
       X=X2;
  end
  
+ for n=1:nData
+    temp = X{n};
+    temp(isnan(temp)) = [];
+    X{n} = temp;
+ end
+ 
  %% Main Function
  
  %-------------------------------------------------------------------------
@@ -87,28 +96,33 @@ nData = size(X,2);
  %-------------------------------------------------------------------------
  i=1;
  for i=1:size(X,2)
-    [f, u]=ksdensity(X{i},'bandwidth',pars.bandwidth);
+    [f, u]=ksdensity(X{i},'bandwidth',pars.bandwidth*quantile(X{i},.99));
     f=f/max(f)*0.3; %   normalize width
     F(:,i)=f;
-    U(:,i)=u;
+    U(:,i)= u;
     MED(:,i)=nanmedian(X{i});
     MX(:,i)=nanmean(X{i});
  end
 
  %-------------------------------------------------------------------------
+if pars.nonnegative
+    U(U<0) = min(U(U>0));
+end
+
+
  i=1;
  medError = false;
  for i=i:size(X,2)
-    fill([F(:,i)+0.5*i*2;flipud(2*i*0.5-F(:,i))],...
+    fill(pars.xOffset + [F(:,i)+0.5*i*2;flipud(2*i*0.5-F(:,i))],...
         [U(:,i);flipud(U(:,i))],fc(i,:),'FaceAlpha',alp,'EdgeColor',lc)
     hold on
     if pars.plotMean
-        p(1)=plot([interp1(U(:,i),F(:,i)+0.5*i*2,MX(:,i),pars.method),...
+        p(1)=plot(pars.xOffset + [interp1(U(:,i),F(:,i)+0.5*i*2,MX(:,i),pars.method),...
             interp1(flipud(U(:,i)),flipud(2*i*0.5-F(:,i)),MX(:,i),pars.method) ],...
             [MX(:,i) MX(:,i)],mc,'LineWidth',2);
 
         try
-        p(2)=plot([interp1(U(:,i),F(:,i)+0.5*i*2,MED(:,i)),...
+        p(2)=plot(pars.xOffset + [interp1(U(:,i),F(:,i)+0.5*i*2,MED(:,i)),...
             interp1(flipud(U(:,i)),flipud(2*i*0.5-F(:,i)),MED(:,i),pars.method) ],...
             [MED(:,i) MED(:,i)],medc,'LineWidth',2);
         catch
@@ -129,4 +143,12 @@ end
 set(gca,'XTick',1:nData,'XTickLabels',xL);
  
  %-------------------------------------------------------------------------
+
+if ~isempty(pars.medianStyle)
+    meds = cellfun(@nanmedian,X);
+    hold on;
+    plot(1:length(X),meds,pars.medianStyle{:});
+end
+
+
 end %of function

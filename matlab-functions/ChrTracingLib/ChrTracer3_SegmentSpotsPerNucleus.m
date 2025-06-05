@@ -42,10 +42,13 @@ daxData = LoadDaxFromEtable(eTableXLS,...
             'verbose',pars.verbose);
 
 %% rewrite me so inf = autocycle
+promptMe = true;
 if isinf(pars.fov)
     fov = 1:size(daxData,2);
+    promptMe = false;
 else
     fov = pars.fov;
+    promptMe = true;
 end
 
 for f=fov  
@@ -99,6 +102,7 @@ for f=fov
         answer = questdlg('found existing fits, recompute?', ... % question
                 'Prompt ', ...  % pop-up label
                 'Yes','No','No'); % op1 op2 default
+
         if strcmp(answer,'Yes')
             do_fit = true;
         else
@@ -118,7 +122,7 @@ for f=fov
                                         'rerunCellpose',pars.rerunCellpose,...
                                         'nucleiThreshold',pars.nucleiThreshold);     
         %% approve results
-        if ~isinf(pars.fov)
+        if promptMe
          answer = questdlg('save result or change parameters?', ... % question
                 'Prompt ', ...  % pop-up label
                 'Save and Continue','Refit','Save and Continue'); % op1 op2 default

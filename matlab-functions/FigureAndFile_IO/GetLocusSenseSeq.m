@@ -27,7 +27,8 @@ defaults(end+1,:) = {'hg19_fasta','string','U:\GenomeData\GenomeAssemblies\hg19\
 defaults(end+1,:) = {'hg38_fasta','string','U:\GenomeData\GenomeAssemblies\hg38\hg38.fasta'};
 defaults(end+1,:) = {'mm9_fasta','string','U:\GenomeData\GenomeAssemblies\mm9\mm9.fasta'};
 defaults(end+1,:) = {'mm10_fasta','string','U:\GenomeData\GenomeAssemblies\mm10\mm10.fasta'};
-defaults(end+1,:) = {'dm3_fasta','string','U:\GenomeData\GenomeAssemblies\dm3\dm3.fasta'};%  'C:\Data\Fly\dm3\dm3.fasta'
+defaults(end+1,:) = {'dm3_fasta','string','U:\GenomeData\GenomeAssemblies\dm3\dm3.fasta'};  %  'C:\Data\Fly\dm3\dm3.fasta'
+defaults(end+1,:) = {'dm6_fasta','string','U:\GenomeData\GenomeAssemblies\dm6\dm6.fasta'};
 defaults(end+1,:) = {'ce11_fasta','string','U:\GenomeData\GenomeAssemblies\ce11\ce11.fasta'};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
@@ -70,7 +71,7 @@ elseif strcmp(pars.genome,'ce11')
         ce11 = fastaread(pars.ce11_fasta);
     end
 else
-    disp(['genome ',pars.genome,' is not currently supported']);
+    disp(['genome ',pars.genome,' is not currently supported by GetLocusSenseSeq']);
 end
 
 nascentRNAs = readtable(nascentRNA); 

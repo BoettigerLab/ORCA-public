@@ -18,7 +18,7 @@ pars = ParseVariableArguments(varargin,defaults,mfilename);
     normMap = zeros(size(refMap));
     for r=1:nHybes-1
         norm(r)  = nanmedian(diag(refMap,r));
-        selMap = boolean(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
+        selMap = logical(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
         normMap =normMap+ norm(r)*double(selMap);
     end
     medMap = normMap; 
@@ -42,7 +42,7 @@ pars = ParseVariableArguments(varargin,defaults,mfilename);
     normMap = zeros(size(refMap));
     normByDist = normMap;
     for r=1:nHybes-1
-        selMap = boolean(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
+        selMap = logical(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
         normMap = normMap+ y(r)*double(selMap);
         normByDist = normByDist + norm(r)*double(normMap);
     end

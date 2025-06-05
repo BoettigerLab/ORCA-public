@@ -13,6 +13,7 @@ defaults(end+1,:) = {'nppXY','freeType',[]}; % will read from table eTableXLS in
 defaults(end+1,:) = {'overlayFig','integer',10}; 
 defaults(end+1,:) = {'verbose','boolean',true}; 
 defaults(end+1,:) = {'balanceBrightness','boolean',true}; 
+defaults(end+1,:) = {'minFracOn','fraction',.1}; 
 defaults(end+1,:) = {'saveFigure','boolean',true}; 
 defaults(end+1,:) = {'overwrite','boolean',true}; 
 defaults(end+1,:) = {'showExtraPlots','boolean',false}; 
@@ -93,56 +94,54 @@ polys = cell(nFOVs,1);
 maps = cell(nFOVs,1);
 spotCodes = cell(nFOVs,1); % table - x,y,fov,barcode-value
 try
-for f=1:nFOVs
-    if pars.showFOVfig
-        figure(pars.showFOVfig); clf;
-    end
-    
-     % ----load spot data in fov
-%      spotXYtab = [];
-%      spotTableFile = [saveFolder,'fov',num2str(f,'%03d'),'_selectSpots.csv'];
-%      if exist(spotTableFile,'file')~=0
-%         spotXYtab = readtable(spotTableFile);
-%      end
-%      spotXY = round([spotXYtab.locusX,spotXYtab.locusY]);
-% 
-%    --- load ORCA AllFits table     
-     orcaTable = readtable([analysisFolder,'fov',num2str(f,'%03d'),'_AllFits.csv']);
-     if isempty(nHybs)
-         nHybs = max(orcaTable.readout(strcmp(orcaTable.dataType,'H')));
-     end
-     [polys{f},maps{f},spotData] = TableToPolymer(orcaTable,'bins',nHybs);
-     spotXY = round(spotData/pars.nppXY); 
-     nSpots = size(spotXY,1);
-     spotCodes{f} = zeros(nSpots,3+nB);
-
-    for b=1:nB        
-         % record spot brightness
-         [nRows,nCols] = size(imMax{b,f});
-         for s=1:nSpots
-             xi = spotXY(s,1);
-             yi =  spotXY(s,2);
-             xi = max([min([xi,nRows]),1]);
-             yi = max([min([yi,nCols]),1]);
-             if ~isnan(xi)
-                 spotCodes{f}(s,1) = xi;
-                 spotCodes{f}(s,2) = yi;
-                 spotCodes{f}(s,3) = f; 
-                 spotCodes{f}(s,3+b) = imMax{b,f}(yi,xi);
-             end
-         end 
-         
-         if pars.showFOVfig
-             figure(pars.showFOVfig);
-             subplot(1,nB,b); imagesc( imMax{b,f}); caxis([1e3,2^16]); % camera saturated
+    for f=1:nFOVs
+        if pars.showFOVfig
+            figure(pars.showFOVfig); clf;
+        end
+        
+         % ----load spot data in fov
+    %      spotXYtab = [];
+    %      spotTableFile = [saveFolder,'fov',num2str(f,'%03d'),'_selectSpots.csv'];
+    %      if exist(spotTableFile,'file')~=0
+    %         spotXYtab = readtable(spotTableFile);
+    %      end
+    %      spotXY = round([spotXYtab.locusX,spotXYtab.locusY]);
+    % 
+    %    --- load ORCA AllFits table     
+         orcaTable = readtable([analysisFolder,'fov',num2str(f,'%03d'),'_AllFits.csv']);
+         if isempty(nHybs)
+             nHybs = max(orcaTable.readout(strcmp(orcaTable.dataType,'H')));
          end
+         [polys{f},maps{f},spotData] = TableToPolymer(orcaTable,'bins',nHybs);
+         spotXY = round(spotData/pars.nppXY); 
+         nSpots = size(spotXY,1);
+         spotCodes{f} = zeros(nSpots,3+nB);
+    
+        for b=1:nB        
+             % record spot brightness
+             [nRows,nCols] = size(imMax{b,f});
+             for s=1:nSpots
+                 xi = spotXY(s,1);
+                 yi =  spotXY(s,2);
+                 xi = max([min([xi,nRows]),1]);
+                 yi = max([min([yi,nCols]),1]);
+                 if ~isnan(xi)
+                     spotCodes{f}(s,1) = xi;
+                     spotCodes{f}(s,2) = yi;
+                     spotCodes{f}(s,3) = f; 
+                     spotCodes{f}(s,3+b) = imMax{b,f}(yi,xi);
+                 end
+             end 
+             
+             if pars.showFOVfig
+                 figure(pars.showFOVfig);
+                 subplot(1,nB,b); imagesc( imMax{b,f}); caxis([1e3,2^16]); % camera saturated
+             end
+        end
     end
-end
-
 catch er
     warning(er.getReport);
     disp('debug here');
-    
 end
 
 %%
@@ -160,27 +159,8 @@ if ~isempty(pars.codebook)
     end
     codebookBarcodes = codebookTable{1,2:end};
     codebookNames = codebookTable{2:end,1};
-    codebook = codebookTable{2:end,2:end};
-    
-    
-    
      codeScore = double(spotCode(:,4:end)); 
      codebook2 = codebook;
-     % % OLD order of barcodes in spotCode is H1_750, H2_750 ... H1_647, H2_647     
-     % chns = cellfun(@str2double,datPropTable.chn);
-     % [chns,chnSort] = sort(chns,'descend');  % Not sure this sort step is robust to all variations of using barcodes
-     % reads = datPropTable.readout(chnSort);
-%      codebook2 = zeros(size(codebook,1),length(reads));
-%      for b=1:length(codebookBarcodes)
-%          cs = find( reads == codebookBarcodes(b));
-%          for c=Row(cs)
-%             codebook2(:,c) = codebook(:,b);
-%          end
-%      end
-     
-     % % just for troubleshooting, compare tables
-%      codeTable2 = cat(1,reads',codebook2)
-%      codeTable1 = codebookTable{:,2:end}
      
      % we want to balance the barcodes since not all are equally bright
      % Also the 750 images are systematically much dimmer than the 647
@@ -194,10 +174,15 @@ if ~isempty(pars.codebook)
      % individual barcodes mutliple times.  
      
      if pars.balanceBrightness
-         mB=quantile(codeScore,.9); %
-         % mB(reads==0) = inf; % removing the intentionally blank.  % Blanks are now handled above  
-         codeScore = codeScore ./ repmat(mB,totSpots,1); 
-         codeScore(codeScore>1) = 1;
+         % mB=quantile(codeScore,.9,1); %
+         % % mB(reads==0) = inf; % removing the intentionally blank.  % Blanks are now handled above  
+         % codeScore = codeScore ./ repmat(mB,totSpots,1); 
+         % codeScore(codeScore>1) = 1;
+        barcodeIntensity = codeScore;
+        mB = quantile(barcodeIntensity,1-pars.minFracOn,1);
+        cellNormBarcodeBright = barcodeIntensity./repmat(mB,totCells,1);  % balance barcode brightnesses
+        % figure(2); clf; imagesc(cellNormBarcodeBright(randi(totCells,100,1),:)); colorbar; 
+        codeScore = cellNormBarcodeBright./ repmat( max(cellNormBarcodeBright,[],2),1,nB); % scale all brightnesses to sum to 1 
      end
      % Now we 
      % figure(1); clf; imagesc(codeScore(randperm(totSpots,50),:));
@@ -234,16 +219,12 @@ if ~isempty(pars.codebook)
     spotCodeTable = table(x,y,fov,spotGroup,contrast,groupName);
      
 else % OBSOLETE? 03/24/21
-
-
     % classify with max signal
     for s=1:totSpots
         [vs,is] = sort(spotCode(s,4:end),'descend'); 
         spotGroup(s) = is(1);
         contrast(s) = vs(1)./vs(2);
     end
-
-
     % figure(2); clf; hist(contrast,100);
     % figure(3); clf; hist(spotGroup,1:nB);
 
@@ -274,8 +255,8 @@ else % OBSOLETE? 03/24/21
                 title(['contrast, median:' num2str(nanmedian(contrast(spotGroup==b)))]);
                 xlim([0,10]);
                 subplot(nB,2,2*b);
-                hist(spotCode(spotGroup==b,3+b),0:2000:2^16); xlim([0,2^16]);
-                title(['brightness, median: ',num2str(nanmedian( spotCode(spotGroup==b,3+b)))] );
+                hist(spotCode(spotGroup==b,3+b),0:200:2^16); xlim([0,2^16]);
+                title(['brightness, median: ',num2str(nanmean( spotCode(spotGroup==b,3+b)))] );
             end
         end
 
@@ -298,7 +279,11 @@ else % OBSOLETE? 03/24/21
         x = spotCode(:,1);
         y = spotCode(:,2);
         fov = spotCode(:,3);
+
         spotCodeTable = table(x,y,fov,spotGroup,contrast);
+        for b=1:nB
+            spotCodeTable.(['b',num2str(b)]) = spotCode(:,3+b);
+        end
 
 
         if pars.showExtraPlots

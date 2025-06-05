@@ -118,9 +118,13 @@ function h = hexscatter( xdata, ydata, varargin )
     layer = foo(:,2) > dy;
 
     % Convert to block B format
+    try
     toflip = layer == orientation;
     foo(toflip,1) = dx - foo(toflip,1);
-
+    catch er
+        disp(er.message)
+        disp('error here')
+    end
     foo(layer==1,2) = foo(layer==1,2) - dy;
 
     % Find closest corner

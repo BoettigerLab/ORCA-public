@@ -2,7 +2,7 @@ function [plotMat,coords,max_coords] = ReadJuiceboxMatrix(matTxt,varargin)
 % plotMat = ReadJuiceboxMatrix(matTxt,varargin)
 %
 % Example:
-% matTxt = 'E:\Alistair\Analysis\2017-10-12_K562vsIMR90\IMR90_chr21reg_5kb_rawMatrix.txt';
+% matTxt = 'U:\GenomeData\JuiceboxExport\IMR90_chr21reg_5kb_rawMatrix.txt';
 % [plotMat,coords] = ReadJuiceboxMatrix(matTxt,...
 %                    'locus','chr21:29372319-31372318');
 % 
@@ -70,7 +70,7 @@ cm = quantile(rawMat.Var3,.95);
 if ~isempty(pars.locus)
    [~,locusStart,locusEnd] = ParseLocusName(pars.locus);
    coords = [locusStart,locusEnd];
-   c1new = ceil((locusStart - c1)/pars.mapRes);
+   c1new = ceil((locusStart - c1)/pars.mapRes+1);
    c2new = floor((locusEnd - c1)/pars.mapRes) ;
    if c1new < 1 || c2new < 1
       disp(['map region: ',num2str(c1),'-',num2str(c2),' request region: ',num2str(locusStart),'-',num2str(locusEnd)]);

@@ -1,7 +1,8 @@
 function cellBorders = FindNucBorders(im2D,cntrs,radii,varargin)
 % cellBorders = FindNucBorders(im2D,cntrs,radii,$NAME$,$VALUE$)
 % 
-% 
+% this spins the image around the cell centers, to refine the borders
+% identified with a FindCircles approach based on the max derivative. 
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'nAngles','integer',21};

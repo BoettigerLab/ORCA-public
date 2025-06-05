@@ -7,6 +7,11 @@ function [alignValues,pars] = CorrAlignFast(im1,im2,varargin)
 % Compute xshift and yshift to align two images based on maximizing
 % cross-correlation.  
 % 
+% Example
+% reg = CorrAlignFast(im1,im2);
+% im2b = ApplyReg(im2,reg);
+%
+%
 % Updates 2019-10-23
 % unless we are only doing translation, it is not possible to collapse the
 % coarse and fine alignment steps.  
@@ -17,6 +22,8 @@ function [alignValues,pars] = CorrAlignFast(im1,im2,varargin)
 % computation. For clarity and backwards compatibility (though not 
 % elegance), chose to explicit represent this as 2 step process with a
 % xshift2, theta2, etc.
+%
+%
 
 % -------------------------------------------------------------------------
 % Default variables
@@ -29,7 +36,7 @@ defaults(end+1,:) = {'maxShift', 'nonnegative', inf};
 defaults(end+1,:) = {'gradMax', 'boolean', true};
 defaults(end+1,:) = {'minGrad', 'float', -inf};
 defaults(end+1,:) = {'angles','float',0}; % -10:1:10
-defaults(end+1,:) = {'scales','float',1}; % -10:1:10
+defaults(end+1,:) = {'scales','float',1}; % 0.8:.05:1.2
 defaults(end+1,:) = {'fineMaxShift', 'nonnegative', 30};
 defaults(end+1,:) = {'fineAngles','float',0}; % -1:.1:1
 defaults(end+1,:) = {'fineScales','float',1}; % 0.95:0.01:.1.05

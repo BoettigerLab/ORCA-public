@@ -56,7 +56,7 @@ end
  %     translations for speed.  
     singleStep = true;
     if isfield(regData,'xshift2') && isfield(regData,'yshift2') 
-        if regData.theta2 == 0 
+        if regData.theta2 == 0 % if there's no rotation, we can combine these two translation steps
             singleStep = true;
             regData.xshift = regData.xshift + regData.xshift2;
             regData.yshift = regData.yshift + regData.yshift2;

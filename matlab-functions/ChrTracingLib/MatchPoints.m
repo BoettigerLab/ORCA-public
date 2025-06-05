@@ -1,13 +1,27 @@
 function [matched,cost,costDif] = MatchPoints(xyz1,xyz2,varargin)
 % Pair N points
+% input xyz1,xyz2 or xy1 xy2 (2D and 3D inputs allowed, pdist sorts it
+% out). 
+% The points will be sorted such that the second 
+% 
 % output matched
+% matched, a 2 x N matrix listing all the matched pairs between the lists
+% costDif, the difference in cost between the best solution 
+%  
+% 
+% example
+% matched = MatchPoints(p1,p2); 
+% plot([p1(matched(:,1),1),p2(matched(:,2),1)]',...
+%     [p1(matched(:,1),2),p2(matched(:,2),2)]','k-');
+% hold on;
+% plot(p1(matched(:,1),1),p1(matched(:,1),2),'ro'); hold on;
+% plot(p2(matched(:,2),1),p2(matched(:,2),2),'b+');
+
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'rank','integer',1};
+defaults(end+1,:) = {'maxDist','nonnegative',0};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
-
-% matched, a 2 x N matrix listing all the matched pairs between the lists
-% costDif, the difference in cost between the best solution 
 
 
 
@@ -18,6 +32,9 @@ n2 = size(xyz2,1);
 %    this doesn't require equal number of points
 % fast computation of all pairwise distances
 mp = squareform(pdist([xyz1;xyz2]));
+if pars.maxDist ~=0
+    mp(mp>pars.maxDist) = pars.maxDist;
+end
 mp = mp(1:n1,n1+1:n1+n2);
 costUnmatched = sum(mp(:)); % can't be infinite, or all unmatched soln are equal. 
 matched = matchpairs(mp,costUnmatched); % minimize cost (distance) matrix

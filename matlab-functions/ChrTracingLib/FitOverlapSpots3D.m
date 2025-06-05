@@ -328,9 +328,10 @@ end
             colormap(gray);
         else
             figure(pars.figShowFits); clf;
-            [xy,xz] = ProjectIm3D(data_3d); % use the original data
-            subplot(2,1,1); imagesc(xy);  colorbar; hold on; plot(fitResults.x,fitResults.y,'ro'); title('data xy');
-            subplot(2,1,2); imagesc(xz);  colorbar;  hold on; plot(fitResults.x,fitResults.z,'ro'); title('data xz');
+            [xy,xz,yz] = ProjectIm3D(data_3d); % use the original data
+            subplot(3,1,1); imagesc(xy);  colorbar; hold on; plot(fitResults.x,fitResults.y,'ro'); title('data xy');
+            subplot(3,1,2); imagesc(xz);  colorbar;  hold on; plot(fitResults.x,fitResults.z,'ro'); title('data xz');
+            subplot(3,1,3); imagesc(yz);  colorbar;  hold on; plot(fitResults.y,fitResults.z,'ro'); title('data yz');
             colormap(gray);
         end
     end

@@ -1,0 +1,286 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[      8210,        277]
+NotebookOptionsPosition[      6934,        228]
+NotebookOutlinePosition[      7299,        244]
+CellTagsIndexPosition[      7256,        241]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Mixing Matrix Construction", "Title",
+ CellChangeTimes->{{3.6207574474127483`*^9, 3.620757469847705*^9}}],
+
+Cell["N Choose P Code", "Subtitle",
+ CellChangeTimes->{{3.6207574596949368`*^9, 3.620757488091859*^9}}],
+
+Cell["\<\
+Jeffrey Moffitt\[LineSeparator]September 26, 2014
+Based on code by Bogdan Bintu \
+\>", "Text",
+ CellChangeTimes->{{3.6207574935955114`*^9, 3.620757512731258*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["Purpose/Background", "Subsection",
+ CellChangeTimes->{{3.6207575156772203`*^9, 3.620757526072166*^9}}],
+
+Cell[TextData[{
+ "The purpose of this notebook is to create matlab functions that can be used \
+to generate mixing matrices between the abundance vector for actual codewords \
+and the measured abundances of all or a subset of possible codewords. This \
+notebook assumes the asymmetric, unique-hyb error model in which each bit has \
+a unique probability of the ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{"0", "\[Rule]", "1"}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ " or ",
+ Cell[BoxData[
+  FormBox[
+   RowBox[{"1", "\[Rule]", "0"}], TraditionalForm]],
+  FormatType->"TraditionalForm"],
+ " transition independent of the identity of the word.  "
+}], "Text",
+ CellChangeTimes->{{3.620757518797306*^9, 3.620757644167678*^9}}],
+
+Cell["\<\
+This notebook is used to create the following matlab functions:\
+\>", "Text",
+ CellChangeTimes->{{3.6207576525152435`*^9, 3.620757689920164*^9}}],
+
+Cell["W14Choose4Bits345", "Text",
+ CellChangeTimes->{{3.6207576968798018`*^9, 3.620757706213019*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Loading Dependencies", "Subsection",
+ CellChangeTimes->{{3.6207576914791985`*^9, 3.620757693790739*^9}, {
+  3.620761800848189*^9, 3.6207618078886766`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["ToMatlab", "Subsubsection",
+ CellChangeTimes->{{3.6207618561453023`*^9, 3.620761859392475*^9}}],
+
+Cell["\<\
+This notebooks uses the mathematica package, ToMatlab.m, which can be found \
+here:  http://library.wolfram.com/infocenter/MathSource/577/\
+\>", "Text",
+ CellChangeTimes->{{3.6207618606693172`*^9, 3.620761910420308*^9}}],
+
+Cell[BoxData[
+ RowBox[{"<<", 
+  RowBox[{"(", 
+   RowBox[{"FileNameJoin", "[", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"ParentDirectory", "[", 
+       RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ",", " ", 
+      "\"\<\\\\ConversionToMatlab\\\\ToMatlab.m\>\""}], "}"}], "]"}], 
+   ")"}]}]], "Input",
+ CellChangeTimes->{{3.620762517551632*^9, 3.620762594895142*^9}}]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Constructing W14Choose4", "Subsection",
+ CellChangeTimes->{{3.6207626198294907`*^9, 3.6207626300502996`*^9}, 
+   3.6207631367779703`*^9}],
+
+Cell[CellGroupData[{
+
+Cell["Building Codewords", "Subsubsection",
+ CellChangeTimes->{{3.6207626349853144`*^9, 3.6207626491057262`*^9}, {
+  3.6207632388251443`*^9, 3.6207632396657133`*^9}}],
+
+Cell["\<\
+First we construct the list of all codewords\
+\>", "Text",
+ CellChangeTimes->{{3.620762650359564*^9, 3.6207626665480146`*^9}, {
+  3.6207632473628283`*^9, 3.6207632525270543`*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"numHybs", "=", " ", "14"}], ";"}]], "Input",
+ CellChangeTimes->{{3.620763072150405*^9, 3.6207630791290655`*^9}, 
+   3.6207653564874077`*^9, 3.620765456599036*^9, {3.620766117312133*^9, 
+   3.620766117433206*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"words", " ", "=", " ", 
+   RowBox[{"IntegerDigits", "[", 
+    RowBox[{
+     RowBox[{"Range", "[", 
+      RowBox[{"0", ",", " ", 
+       RowBox[{
+        SuperscriptBox["2", "numHybs"], "-", "1"}]}], "]"}], ",", " ", "2", 
+     ",", " ", "numHybs"}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.620762668085048*^9, 3.620762691181196*^9}, {
+  3.620763081617711*^9, 3.620763105976544*^9}, {3.6207653112233105`*^9, 
+  3.6207653117546644`*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\<\
+Define Individual Probabilities\
+\>", "Subsubsection",
+ CellChangeTimes->{{3.6207633060965853`*^9, 3.620763330568683*^9}}],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"p", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"0", ",", "0"}], "}"}], ",", 
+     RowBox[{"{", "i_", "}"}]}], "]"}], ":=", 
+   RowBox[{"1", "-", 
+    RowBox[{"p", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"0", ",", "1"}], "}"}], ",", 
+      RowBox[{"{", "i", "}"}]}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"p", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"1", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", "i_", "}"}]}], "]"}], ":=", 
+   RowBox[{"1", "-", 
+    RowBox[{"p", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"1", ",", "0"}], "}"}], ",", 
+      RowBox[{"{", "i", "}"}]}], "]"}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"p", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"i_", ",", "j_"}], "}"}], ",", 
+     RowBox[{"{", "k_", "}"}]}], "]"}], ":=", 
+   RowBox[{"q", "[", 
+    RowBox[{
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"i", "\[Equal]", "1"}], " ", "&&", " ", 
+        RowBox[{"j", "\[Equal]", "0"}]}], ",", " ", "2", ",", " ", "1"}], 
+      "]"}], ",", " ", "k"}], "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.620763344226474*^9, 3.6207633645007334`*^9}, {
+   3.6207634329175415`*^9, 3.620763439510933*^9}, {3.6207634755875835`*^9, 
+   3.6207635166389084`*^9}, 3.620765195201288*^9, {3.620765245883911*^9, 
+   3.6207652473518896`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"W", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"MapIndexed", "[", 
+       RowBox[{"p", ",", 
+        RowBox[{"Transpose", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"words", "[", 
+            RowBox[{"[", "i", "]"}], "]"}], ",", 
+           RowBox[{"words", "[", 
+            RowBox[{"[", "j", "]"}], "]"}]}], "}"}], "]"}]}], "]"}], "/.", 
+      RowBox[{"List", "\[Rule]", "Times"}]}], ",", 
+     RowBox[{"{", 
+      RowBox[{"i", ",", 
+       RowBox[{"Length", "[", "words", "]"}]}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"j", ",", 
+       RowBox[{"Length", "[", "words", "]"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"W", "=", 
+   RowBox[{"Transpose", "[", "W", "]"}]}], ";"}]}], "Input"],
+
+Cell[BoxData["$Aborted"], "Output",
+ CellChangeTimes->{3.620766345052682*^9}]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1350, 631},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+ShowSelection->True,
+FrontEndVersion->"9.0 for Microsoft Windows (64-bit) (November 20, 2012)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[579, 22, 111, 1, 83, "Title"],
+Cell[693, 25, 103, 1, 49, "Subtitle"],
+Cell[799, 28, 172, 4, 65, "Text"],
+Cell[CellGroupData[{
+Cell[996, 36, 108, 1, 36, "Subsection"],
+Cell[1107, 39, 734, 17, 47, "Text"],
+Cell[1844, 58, 155, 3, 29, "Text"],
+Cell[2002, 63, 101, 1, 29, "Text"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2140, 69, 161, 2, 36, "Subsection"],
+Cell[CellGroupData[{
+Cell[2326, 75, 101, 1, 27, "Subsubsection"],
+Cell[2430, 78, 230, 4, 29, "Text"],
+Cell[2663, 84, 374, 10, 31, "Input"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3086, 100, 143, 2, 36, "Subsection"],
+Cell[CellGroupData[{
+Cell[3254, 106, 166, 2, 27, "Subsubsection"],
+Cell[3423, 110, 189, 4, 29, "Text"],
+Cell[3615, 116, 247, 5, 31, "Input"],
+Cell[3865, 123, 478, 12, 33, "Input"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4380, 140, 132, 3, 27, "Subsubsection"],
+Cell[4515, 145, 1440, 45, 72, "Input"],
+Cell[CellGroupData[{
+Cell[5980, 194, 822, 25, 52, "Input"],
+Cell[6805, 221, 77, 1, 30, "Output"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)

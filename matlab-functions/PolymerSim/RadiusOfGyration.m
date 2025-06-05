@@ -4,6 +4,7 @@ function Rg = RadiusOfGyration(B)
 % B is a N x 3 matix
 
 
+
 B(isnan(B(:,1)),:) = [];
 
 N = size(B,1);

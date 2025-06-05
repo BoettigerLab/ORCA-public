@@ -2,6 +2,7 @@ function [Xs,Ys,Zs,Vs] = PlotLEF(xyz1,xyz2,varargin)
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'maxSep','nonnegative',2.5};
+defaults(end+1,:) = {'LEFweight','nonnegative',1};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 
@@ -27,7 +28,7 @@ for r=1:N
                 (xyz2(r,:) - .5*v.*[1,1,-1/2]);  % (xyz2(r,:) - .5*v.*[1,1,1/2])  ;            
                 xyz1(r,:) - .25*v];
         
-        [X{r},Y{r},Z{r},V{r}] = PlotTube(ring,'r',.25*d,'interpPts',10,'method','spline','colormap',[1 .5 0],'plot',false);
+        [X{r},Y{r},Z{r},V{r}] = PlotTube(ring,'r',pars.LEFweight*.2*d,'interpPts',10,'method','spline','colormap',[1 .5 0],'plot',false);
         if r<N
             X{r} = [X{r}; nan(1,size(X{r},2))];
             Y{r} = [Y{r}; nan(1,size(X{r},2))];

@@ -105,7 +105,7 @@ datSpts = cell(numHybes,numDataChns);
 fidSptsRaw = fidSpts;
 datSptsRaw = datSpts;
 for h=1:numHybes   % consider parfor this
-
+    try
     % we shift the center by the integer pixel amount to decide what region
     % of the dax to load. we shift that resulting image by the remaining
     % subpixel amount for the final image;
@@ -178,7 +178,13 @@ for h=1:numHybes   % consider parfor this
     if strcmp(binaryFormat,'b')
         im = swapbytes(im);
     end
-    im = reshape(im,[ys,xs,framesToLoadFid]); % figure(7); clf; imagesc(max(im,[],3)); colormap gray; 
+    try
+        im = reshape(im,[ys,xs,framesToLoadFid]); % figure(7); clf; imagesc(max(im,[],3)); colormap gray; 
+    catch er
+        warning(er.getReport);
+        disp('debug here');
+    end
+    
     if pars.downSampleZ ~= 1
        im = im(:,:,1:pars.downSampleZ:end);
     end
@@ -200,6 +206,10 @@ for h=1:numHybes   % consider parfor this
         datSptsRaw{h,n} = im;
         movieReg = ApplyReg(im,subPixel);  % apply hybe specific drift correction
         datSpts{h,n} = movieReg;
+    end
+    catch er
+        warning(['error on hyb ',num2str(h)]);
+        disp(er.getReport);
     end
 end
 

@@ -24,7 +24,7 @@ stvFiles = dir([mosaicFolder,'*.stv']);
 matFiles = dir([mosaicFolder,'*.mat']); 
 
 if isempty(stvFiles)
-    disp('no .stv files found in folder');
+    warning('no .stv files found in folder');
     disp(mosaicFolder);
 end
 

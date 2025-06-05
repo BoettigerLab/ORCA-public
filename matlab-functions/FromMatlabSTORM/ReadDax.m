@@ -277,7 +277,9 @@ if DoThis
         inds = sub2indFast([frameDim(1),frameDim(2),framesInDax],...
                         ri(:),ci(:),zi(:));
         movie = memoryMap.Data(inds); 
-        movie = swapbytes(movie);
+        if strcmp(binaryFormat,'b')
+            movie = swapbytes(movie);
+        end
         xs = xe-xi+uint32(1);
         ys = ye-yi+uint32(1);
         movie = reshape(movie,[xs,ys,framesToLoad]);

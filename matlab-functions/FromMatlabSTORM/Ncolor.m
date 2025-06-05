@@ -10,6 +10,7 @@ defaults(end+1,:) = {'colormap', 'colormap', 'hsv'};
 defaults(end+1,:) = {'contrastRGB', 'boolean', false};
 defaults(end+1,:) = {'contrastHigh', 'fraction', .9999};
 defaults(end+1,:) = {'contrastLow', 'fraction', 0};
+defaults(end+1,:) = {'colorMax', 'boolean', false};
 % -------------------------------------------------------------------------
 % Parse necessary input
 % -------------------------------------------------------------------------
@@ -36,6 +37,18 @@ pars = ParseVariableArguments(varin, defaults, mfilename);
 % -------------------------------------------------------------------------
 [vDim,hDim,numColors] = size(imIn);
 clrmap = GetColorMap(pars.colormap,numColors); 
+
+if pars.colorMax
+    [v,i] = max(imIn,[],3);
+    imC2 = zeros(size(imIn),class(imIn));
+    for t=1:numColors
+        temp = imC2(:,:,t);
+        temp(i==t) = v(i==t);
+        imC2(:,:,t) = temp; 
+    end
+    imIn = imC2;
+end
+
 
 if size(clrmap,1) < numColors
     error(['colormap must be a colormap name or a colormap matrix of length at least ',num2str(numColors)]);

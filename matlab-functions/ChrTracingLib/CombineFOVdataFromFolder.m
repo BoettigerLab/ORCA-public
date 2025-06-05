@@ -14,7 +14,7 @@ defaults(end+1,:) = {'mosaicPars','freeType',[]};
 defaults(end+1,:) = {'selectFOV','freeType',[]};
 defaults(end+1,:) = {'subFolders','boolean',true};
 % TableToDistMap pars
-defaults(end+1,:) = {'bins','integer',0}; % fixed matrix size rather than auto determine 
+defaults(end+1,:) = {'bins','integer',0}; % fixed matrix size rather than auto determine Must be larger than or equal to the largest   
 defaults(end+1,:) = {'impute','boolean',false}; % don't use
 defaults(end+1,:) = {'removeEmpty','boolean',true};
 defaults(end+1,:) = {'byHybe','boolean',true};
@@ -80,15 +80,17 @@ for f=selectFOV % f=5
         % Fix buggy datasets that don't have the FOV recorded
         [~,tabName] = fileparts(datTables{f});
         fovNum = str2double(tabName(4:6));
-        tabFOV = imTables{f}.fov(1);
-        if tabFOV~=fovNum
-            newTab = imTables{f};
-            newTab.fov = fovNum*ones(height(newTab),1);
-            newTab.fs = CantorPair(newTab.fov,newTab.s);
-            newTab.fsr = CantorPair(newTab.fs,newTab.readout);
-            imTables{f} = newTab;
-            writetable(newTab,datTables{f});
-            display(['updated fov number in table ',datTables{f}]);
+        if ~isempty(imTables{f})
+            tabFOV = imTables{f}.fov(1);
+            if tabFOV~=fovNum
+                newTab = imTables{f};
+                newTab.fov = fovNum*ones(height(newTab),1);
+                newTab.fs = CantorPair(newTab.fov,newTab.s);
+                newTab.fsr = CantorPair(newTab.fs,newTab.readout);
+                imTables{f} = newTab;
+                writetable(newTab,datTables{f});
+                display(['updated fov number in table ',datTables{f}]);
+            end
         end
         
     else
@@ -202,13 +204,21 @@ try
     nReads = cellfun(@(x) size(x,1), distMapFilts);
     allReads = nReads == max(nReads);
     if any(allReads==0) && pars.verbose
-        warning('Variable number of reads found. Some data may be exculded from the filtered distance map and polymer matrices');
-    end
+        warning(['Variable number of reads found. ' ...
+            'will not return concatinated matrices']);
+        disp('place debug here')
+    else
     dataOut.distMapFilt = cat(3,distMapFilts{allReads});
     dataOut.distMapFill = cat(3,distMapFill{allReads});
     dataOut.polymerFilt = cat(3,polymerFilts{allReads});
     dataOut.polymerFill = cat(3,polymerFill{allReads});
-    dataOut.datTable = cat(1,imTables{goodTables});
+    try
+        dataOut.datTable = cat(1,imTables{goodTables});
+    catch er
+        disp(er.getReport)
+        warning('excluding concatinated data table')
+    end
+    end
     spotStats = cat(1,spotProps{goodTables});
     dataOut.spotProps  = spotStats;
 catch er

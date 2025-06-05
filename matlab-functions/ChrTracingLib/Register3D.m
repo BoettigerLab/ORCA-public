@@ -49,11 +49,16 @@ else
     i1 = refImage(yi:ye,xi:xe,zi:ze);
     i2 = inputImage(yi:ye,xi:xe,zi:ze);
     
-    [rowsi,colsi,zsi] = size(i1);
+    [rowsi,colsi,zsi] = size(i1);  % 
     rowsI = round(rowsi*pars.upsample);
     colsI = round(colsi*pars.upsample);
     zsI = round(zsi*pars.upsampleZ);
+    try
     im1 = imresize3(i1,[rowsI,colsI,zsI]);
+    catch er
+        warning(er.getReport);
+        disp('stop here')
+    end
     % im1= imresize3(i1,pars.upsample); % try imresize3, change all 3 dimensions 
 
     bx =  [i1(1,:,:), i1(end,:,:)];

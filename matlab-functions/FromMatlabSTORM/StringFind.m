@@ -80,6 +80,13 @@ if parameters.exactly % perfect matches
                 idx( notIdx ) = []; % remove empties to allow concatinating scalars 
                 idx = cell2mat(idx);
             end
+            if ~parameters.cellOutput  && iscell(idx)
+                if size(idx{1},2) == 1
+                    idx = cat(1,idx{:});
+                else
+                    idx = cat(2,idx{:});
+                end
+            end
         end
     end
     

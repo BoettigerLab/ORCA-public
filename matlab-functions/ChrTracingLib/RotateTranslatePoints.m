@@ -81,12 +81,12 @@ P = [1 0 -cent(1)
 
 % the full operation,
 if strcmp(pars.opOrder,'RT') % rotate, then translate
-    % U = T2*T1*inv(P)*R*P;
-    U = T2*T1*P\R*P; % matlab thinks this is faster and more accurate
+    U = T2*T1*inv(P)*R*P;
+    % U = T2*T1*P\R*P; % matlab thinks this is faster and more accurate
 else
     % the full operation, translation first:    
-    % U = inv(P)*R*P*T;
-    U = T2*P\R*P*T1; % matlab thinks this is faster and more accurate
+    U = T2*inv(P)*R*P*T1;
+    % U = T2*P\R*P*T1; % matlab thinks this is faster and more accurate
 end
 % S = T1*R*inv(T1); % b*inv(A) = b/A
 npts = size(ptsIn,1);

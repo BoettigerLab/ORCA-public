@@ -154,6 +154,21 @@ if ~(exist(tableSaveName,'file')==2 && exist(imageSaveName,'file')==2) || pars.o
         x = 0; y=0; z=0; h=0; 
         fidTable = table(x,y,z,h);
     end
+
+    % remove background if requested % (updated 04/11/24, moved this outside of the plotting loop to standardize behavior)  
+    if pars.bkdFrac ~= 0
+        for d=1:nChns % d = 2
+            maxDat = cellfun(@(x) quantile(x(:),.999),datSpts(:,d));
+            bkdHybIdx = (maxDat <= quantile(maxDat,pars.bkdFrac));
+            bkdMap = nanmedian(cat(4,datSpts{bkdHybIdx,d}),4);
+            %datSptsOrig = datSpts;
+            try  % handle errors on small datasets;
+                datSpts(:,d) = cellfun(@(x) x-bkdMap,datSpts(:,d),'UniformOutput',false);
+            catch
+            end        
+        end
+    end
+
     %------------------ just plotting -----------------------------
     if pars.showPlots
         figure(2); clf;
@@ -178,21 +193,6 @@ if ~(exist(tableSaveName,'file')==2 && exist(imageSaveName,'file')==2) || pars.o
             bar(maxDat); hold on; bar(minDat);
             title(['channel ',num2str(d)]);
             legend('data spot','data background'); 
-        end
-        
-        % BACKGROUND subtraction
-        if pars.bkdFrac ~= 0
-            for d=1:nChns % d = 2
-                maxDat = cellfun(@(x) quantile(x(:),.999),datSpts(:,d));
-                bkdHybIdx = (maxDat <= quantile(maxDat,pars.bkdFrac));
-                bkdMap = nanmedian(cat(4,datSpts{bkdHybIdx,d}),4);
-                figure(10+d); clf; ProjectIm3D(bkdMap);
-                %datSptsOrig = datSpts;
-                try  % handle errors on small datasets;
-                    datSpts(:,d) = cellfun(@(x) x-bkdMap,datSpts(:,d),'UniformOutput',false);
-                catch
-                end        
-            end
         end
     end
     %------------------------------------------------------------------------% 

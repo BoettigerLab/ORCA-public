@@ -40,9 +40,9 @@ parameters = ParseVariableArguments(varargin, defaults, mfilename);
 %-------------------------------------------------------------------------
 if isempty(parameters.blastPath)
     if parameters.legacy
-        parameters.blastPath = 'C:\Software\LegacyBLAST\bin\';
+        parameters.blastPath = 'C:\Software\NCBI\LegacyBLAST\bin\';
     else
-        parameters.blastPath = 'C:\Software\blast-2.2.27+\bin\';
+        parameters.blastPath = 'C:\Software\NCBI\blast-2.15.0+\bin\';
     end
 end
 

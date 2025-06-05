@@ -32,7 +32,7 @@ if pars.lenPoly == 0
     end
 end
 
-blockFiles = FindFiles([folder,'*blocks_*.h5']);
+blockFiles = FindFiles([folder,'blocks_*.h5']); % remove * before blocks
 % determine block size from name
 if isempty(blockFiles)
     error(['no data blocks found in ',folder]);
@@ -42,7 +42,7 @@ blockVal = strsplit(blockName,'_');
 blockSize = -(eval(blockVal{2})-1); % turn 0-9 into 10
 
 % blockFiles = cellstr(ls([folder,'*blocks_*.h5']));
-
+pars.blockSize = blockSize;
 polyStep = pars.polyStep;
 mapStep = pars.mapStep;
 
@@ -74,6 +74,7 @@ for b=1:nB
     for e=1:ceil(blockSize/timeStep)
         t=t+timeStep;
         tt=tt+1;
+        try
         data = h5read(file,['/',num2str(t-1),'/pos']); % there should be an easy way to load subsets of the data with h5read, just need to look into it
         polyData = data(:,subset)';
         for p=1:rptPoly
@@ -81,6 +82,10 @@ for b=1:nB
             m2 = round(p*lenPolyDs);         
             temp = double(polyData(m1:m2,:));
             polyReps{p}(:,:,tt) = temp;
+        end
+        catch er
+            disp(['error reading ',file])
+            warning(er.getReport)
         end
     end
 end

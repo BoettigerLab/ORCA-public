@@ -75,7 +75,7 @@ if parameters.clustFig
 %     linkprop([columnAxes, mapAxes],{'XLim'});
 %     linkprop([rowAxes, mapAxes],{'YLim'});
     
-    PresentationPlot('FontSize',5,'LineWidth',.5);
+%     PresentationPlot('FontSize',5,'LineWidth',.5);
     set(rowAxes,'Position',[.05 .05 .2 .7],'YTick',[]);
     set(columnAxes,'Position',[.3 .77 .65 .15],'XTick',[]);
     set(mapAxes,'Position',[.3 .05 .65 .7]); 

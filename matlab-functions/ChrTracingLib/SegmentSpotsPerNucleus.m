@@ -1,14 +1,18 @@
 function [fidTable,cellID_full,figHandle] = SegmentSpotsPerNucleus(fidIm,varargin)
+%% Description
 % take a fiducial 2D image 
 % segment cells using cellpose
 % returns brightest spots per cell
 % 
-% Notes
+%% Notes
 % fidImage is used both to find the spots per cell and to find the nuclear
 %       boundaries.
 % By default rerunCellpose is false, so that any existing cellpose
 %   segmentation maps will be loaded. This accelerates execution. This
 %   function can be called in series to 
+% 
+%% Related Funtctions
+% see also SpotsInNucleus 
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'nucImage','freeType',[]}; % optional, give an image of just the nucleus without the DNA spots to use for nuclear segmentation. 
@@ -98,7 +102,7 @@ if run
         % Optionally, use a separate image for the nuclear segmentation from
         % the spot selection image
         cellID = RunCellpose(nucContrast,'model','nuclei','diameter',pars.diameter,'imSize',size(nucContrast),...
-            'figShowLoadedImages',0,'saveFolder',analysisFolder,'overwrite',pars.rerunCellpose,'env',pars.env); 
+            'figShowLoadedImages',0,'saveFolder',analysisFolder,'overwrite',pars.rerunCellpose); 
     else
         cellID = imresize(pars.cellID,size(fidIm));
     end
@@ -115,21 +119,27 @@ if run
     % Assign spots to cells at full size
     spot_xyLin = sub2ind(size(fidIm),xy(:,2),xy(:,1));
     spot_brightness = fidIm(spot_xyLin);
+ 
+% scale up ID labels
+ cellID_full = imresize(cellID,size(fidIm),'nearest');
 
-    % just for troubleshooting
-%  figure(1); clf; 
-%  cellID_full = imresize(cellID,size(fidIm),'nearest');
-%  mask = boundarymask(cellID_full); 
+ 
+ % %  just for troubleshooting
+ %  mask = boundarymask(cellID_full); 
 %  im = labeloverlay(IncreaseContrast(fidIm,'high',.9999),mask,'Transparency',0);
+%  fidSmall = fidIm;
 %  sc = size(fidIm)/size(fidSmall,1);
 %  y = sc(1)*xy(:,2) - sc(1)/2;
 %  x = sc(2)*xy(:,1) - sc(2)/2;
+%   figure(1); clf;
 %  imagesc(im); hold on; 
 %  plot(x,y,'yo'); colormap(gray);
 %  id = spot_brightness > quantile(spot_brightness,.95)
 %  plot(sc(2)*xybc(id,1),sc(1)*xybc(id,2),'ro'); colormap(gray);
 
-    cellProps = regionprops(cellID,'PixelIdxList');
+
+    % cellProps = regionprops(cellID,'PixelIdxList');  % errors  3/23/23  -- xy is computed on fidIm, so cellID better be resized to be the same size as fidIm   
+    cellProps = regionprops(cellID_full,'PixelIdxList');  
     nSpots = size(xy,1);
     nCells = length(cellProps);
     spotsPerCell = pars.spotsPerCell;
@@ -157,14 +167,13 @@ if run
     % plot(spotMatrix(:,1),spotMatrix(:,2),'ro');
 
     % full size
-    cellID_full = imresize(cellID,size(fidIm),'nearest');
-    mask = boundarymask(cellID_full); 
-    im = labeloverlay(IncreaseContrast(fidIm,'high',.9999),mask,'Transparency',0);
+
     % sc = size(fidIm)/size(fidSmall,1);
     % y = sc(1)*spotMatrix(:,2) - sc(1)/2;
     % x = sc(2)*spotMatrix(:,1) - sc(2)/2;
     % spotMatrix(:,2) = y; % update with new values
     % spotMatrix(:,1) = x;
+
     % add more data columns and convert to table
     nTraces = size(spotMatrix,1);
     spotMatrix = [spotMatrix, (1:nTraces)',f*ones(nTraces,1)];
@@ -173,6 +182,8 @@ if run
     
     % plot segmentation results and spots
     if pars.figShowResult
+        mask = boundarymask(cellID_full); 
+        im = labeloverlay(IncreaseContrast(fidIm,'high',.9999,'low',.3),mask,'Transparency',0); % moved down from above nTraces, 3/23/2023
         figHandle = figure(pars.figShowResult); 
         clf; imagesc(im); 
         colormap(gray); colorbar;  

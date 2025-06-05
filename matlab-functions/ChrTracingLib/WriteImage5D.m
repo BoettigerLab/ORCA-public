@@ -26,7 +26,7 @@ if ~contains(fullSaveName,'.i5d')
 end
 
 % setup info file
-[nRows,nCols,nStks,numClrs,numSpts] = size(im5D);
+[nRows,nCols,nStks,numClrs,numSpts] = size(im5D); 
 datInfo.encoding = 'little endian'; % these are hardcoded options, we merely report them for portability  
 datInfo.dataType = 'uint16'; % these are hardcoded options, we merely report them for portability
 datInfo.total_rows = nRows;
@@ -45,7 +45,7 @@ binaryFormat = 'l';
 
  % write binary file
  fid = fopen(fullSaveName,'w+');
- fwrite(fid, uint16(reshape(im5D,sizeData,1)), 'int16',binaryFormat);
+ fwrite(fid, uint16(reshape(im5D,sizeData,1)), 'uint16',binaryFormat); 
  fclose(fid);
 
 % write info file

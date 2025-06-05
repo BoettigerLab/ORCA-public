@@ -77,9 +77,17 @@ if (nargin > 4)
 V=V';
   end
   V=V*ones(1,subdivs);
-  surfHandle = surf(X,Y,Z,V);
+  if nargout > 4 % showPlot
+    surfHandle = surf(X,Y,Z,V);
+  else
+      surfHandle = [];
+  end
 else
-  surfHandle = surf(X,Y,Z);
+    if nargout > 4 % showPlot
+        surfHandle = surf(X,Y,Z);
+    else
+        surfHandle = [];
+    end
 end
 
 

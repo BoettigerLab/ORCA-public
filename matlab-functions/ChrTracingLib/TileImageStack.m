@@ -27,6 +27,7 @@ defaults(end+1,:) = {'autoContrast', 'boolean', true};
 defaults(end+1,:) = {'showPanelNumber', 'boolean', true}; 
 defaults(end+1,:) = {'fontSize', 'positive', 10}; 
 defaults(end+1,:) = {'tileLabels','freeType',{}};
+defaults(end+1,:) = {'labelColor','colormap','w'};
 defaults(end+1,:) = {'imWhite','freeType',[]};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 %%
@@ -41,11 +42,10 @@ panelHeight = fh.Position(4)/numRows;
 
 if pars.colorTiles
     cmap = GetColorMap(pars.colormap,numTiles);
-    cmap = cast(cmap,class(imageIn));
 end
 
 if isempty(pars.imWhite)
-    imWhite = zeros(yDim,xDim,class(imageIn));
+    imWhite = zeros(yDim,xDim);
 else
     imWhite = pars.imWhite;
 end
@@ -57,23 +57,24 @@ for h=1:numTiles % j = 5
     subHandles{h} = subplot(numRows,numColumns,h,'Units','pixels');   %  slow
     if pars.colorTiles 
         if pars.autoContrast
-            imTemp = IncreaseContrast(imageIn(:,:,h));
+            imTemp = double(IncreaseContrast(imageIn(:,:,h)));
         else
-            imTemp = imageIn(:,:,h);
+            imTemp = double(imageIn(:,:,h));
         end
-        im = zeros(yDim,xDim,3,class(imageIn));
+        im = zeros(yDim,xDim,3); % ,class(imageIn)
         im(:,:,1) = cmap(h,1)*imTemp + imWhite;
         im(:,:,2) = cmap(h,2)*imTemp + imWhite;
         im(:,:,3) = cmap(h,3)*imTemp + imWhite;
+        im = cast(im,class(imageIn));
     else
         im = imageIn(:,:,h);
     end
     imagesc(im); hold on;
     try
     if pars.showPanelNumber && isempty(pars.tileLabels)
-        text(.1*xDim,.1*yDim,num2str(h),'FontSize',pars.fontSize,'color','w');
+        text(.1*xDim,.1*yDim,num2str(h),'FontSize',pars.fontSize,'color',pars.labelColor);
     elseif ~isempty(pars.tileLabels)
-        text(.1*xDim,.1*yDim,pars.tileLabels{h},'FontSize',pars.fontSize,'color','w');
+        text(.1*xDim,.1*yDim,pars.tileLabels{h},'FontSize',pars.fontSize,'color',pars.labelColor);
     end
     catch
     end

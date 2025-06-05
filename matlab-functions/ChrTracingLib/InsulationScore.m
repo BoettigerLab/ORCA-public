@@ -23,7 +23,7 @@ defaults(end+1,:) = {'dataType',{'contact','distance'},'contact'};
 defaults(end+1,:) = {'w','integer',10}; % window
 defaults(end+1,:) = {'showProgress','boolean',false};
 defaults(end+1,:) = {'progressStep','integer',1e3};
-defaults(end+1,:) = {'x','integer',0}; % points at which to compute.   
+defaults(end+1,:) = {'x','integer',0}; % points at which to compute 0 for all   
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 % window size

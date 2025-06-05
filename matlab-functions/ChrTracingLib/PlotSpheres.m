@@ -13,9 +13,11 @@ function PlotSpheres(d,varargin)
 defaults = cell(0,3);
 defaults(end+1,:) = {'subDivisions', 'positive', 30};
 defaults(end+1,:) = {'r', 'positive', 5};
+defaults(end+1,:) = {'sphereRadius', 'positive', []};
 defaults(end+1,:) = {'lightingOn', 'boolean', true};
 defaults(end+1,:) = {'color', 'colormap', [.3 .3 .3]};
 defaults(end+1,:) = {'alpha', 'nonnegative', 1};
+defaults(end+1,:) = {'view', 'freeType', []};
 
 % -------------------------------------------------------------------------
 % Parse necessary input
@@ -31,6 +33,9 @@ parameters = ParseVariableArguments(varargin, defaults, mfilename);
 
 %% Main Function
 
+if ~isempty(parameters.sphereRadius) % allow "SphereRadius" input to override earlier behavior 
+    parameters.r = parameters.sphereRadius;
+end
 
 r = parameters.r;
 if numel(r) == 1
@@ -56,6 +61,10 @@ for k =1:size(d,1)
     end
 end
    
+if ~isempty(parameters.view)
+    view(parameters.view);
+end
+
 if parameters.lightingOn
     material dull;
     camlight right;

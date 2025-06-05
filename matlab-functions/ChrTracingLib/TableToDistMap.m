@@ -147,6 +147,11 @@ elseif strcmp(tableFormat,'new') && ~pars.byHybe  % new format
     
     numSpots = max(spotTable.s);
     numReads = max(spotTable.readout);
+
+    if pars.bins ~= 0 
+        numReads = pars.bins;
+    end
+
     distMap = nan(numReads,numReads,2*numSpots);
     polymer = nan(numReads,4,2*numSpots);
     spotProps = table(zeros(2*numSpots,1),zeros(2*numSpots,1),zeros(2*numSpots,1),zeros(2*numSpots,1),...
@@ -226,6 +231,9 @@ elseif pars.byHybe
     
     numSpots = max(spotTable.s);
     numHybs = max(spotTable.hybe);
+    if pars.bins ~= 0 
+        numHybs = pars.bins;
+    end
     distMap = nan(numHybs,numHybs,2*numSpots);
     polymer = nan(numHybs,4,2*numSpots);
     spotProps = table(zeros(2*numSpots,1),zeros(2*numSpots,1),zeros(2*numSpots,1),zeros(2*numSpots,1),...

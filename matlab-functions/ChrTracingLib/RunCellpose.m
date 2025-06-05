@@ -14,11 +14,23 @@ function cellMasks = RunCellpose(imFiles,varargin)
 % 
 % This implementation wraps only the 2D function, 3D wrapper will follow
 % 
-% 
+% Overwrite/rerun
+%    Be default it saves outputs in the scratch folder, which are rewritten
+%    everytime to avoid confustion. 
+%    If a different saveFolder is given, it will load that. This option is
+%    best when passing a stack of images. 
+%    
+%% Examples
 % imFiles = FindFiles([nucleiFolder,'\',root,'*.dax']);
-global scratchPath  
-% scratchPath = 'T:/Scratch/'
-global condaPrompt;  % 'call C:\ProgramData\anaconda3\Scripts\activate.bat' 
+% RunCellpose(imFiles);
+% 
+%% Updates
+%  11/2/2023 - updated code to read the image size of the dax file from the
+%  info file.  When loading pre-saved data, this ensures the output
+%  behavior of this function returns a map of the same size as when the
+%  function is first called.  Note, it does assume the images are the same
+%  size. 
+global cellpose_env scratchPath  
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'saveFolder','string',''}; % will create a default folder if blank. This is where the cellpose output and processed table will be saved.
@@ -34,9 +46,22 @@ defaults(end+1,:) = {'figShowLoadedImages','integer',1};
 defaults(end+1,:) = {'diameter','nonnegative',0}; % 0 = autodetect  a fixed diameter is substantially faster, and may improve uniformity. 
 defaults(end+1,:) = {'model',{'nuclei','cyto'},'nuclei'};
 defaults(end+1,:) = {'deleteWhenDone','boolean',false};
-defaults(end+1,:) = {'env','string','mlab_cellpose'};
-defaults(end+1,:) = {'condaPrompt','string',condaPrompt};
+defaults(end+1,:) = {'cellpose_env','string',''};
+defaults(end+1,:) = {'device',{'default','none','cuda:1','cuda:2','cuda:3','cpu'},'default'}; % cuda:1
+% defaults(end+1,:) = {'env','string','mlab_cellpose'};
+% defaults(end+1,:) = {'condaPrompt','string',condaPrompt};
+% defaults(end+1,:) = {'activateConda','string',activateConda};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
+
+
+if isempty(cellpose_env) % try to guess most likely place
+    cellpose_env = pars.cellpose_env;
+    if isempty(cellpose_env)
+        warning('global cellpose_env not specified. Please specify how to activate the cellpose environment in your startup');
+        warning('something like: global cellpose_env; cellpose_env = "C:\Anaconda3\Scripts\activate.bat && conda activate cellpose";')
+        error('cellpose not found');
+    end
+end
 
 
 if isempty(scratchPath) && isempty(pars.saveFolder)
@@ -44,7 +69,7 @@ if isempty(scratchPath) && isempty(pars.saveFolder)
 end
 deleteWhenDone = pars.deleteWhenDone;
 if isempty(pars.saveFolder)
-    saveFolder = [scratchPath,'cellposeScratch\'];
+    saveFolder = [scratchPath,'cellposeScratch\']; 
     deleteWhenDone = true; % scratch is always cleaned up;
 else
     saveFolder = [pars.saveFolder,'cellpose\'];
@@ -67,7 +92,7 @@ skipPngs = false;
 
 % create folder if it does not exist. Otherwise clear its contents
 % it is essential the folder is empty for this to work.
-if exist(saveFolder,'dir')==0
+if ~exist(saveFolder,'dir')
     mkdir(saveFolder);
 else
     if pars.overwrite
@@ -83,11 +108,19 @@ else
     end
 end
 
+% get image size
+if strcmp(imFiles{1}(end-2:end),'dax')
+    infoData = ReadInfoFile(imFiles{1});
+    imHeight = infoData.y_end - infoData.y_start +1;
+    imWidth = infoData.x_end - infoData.x_start +1;
+else
+    [imHeight,imWidth,~] = size(imFiles{1});
+end
+
 % save files as 
  % requires a cell array of file paths. If we recieved just a string,
  % convert it to a 1-element array for processing
-
-origSize = repmat([pars.imSize(1),pars.imSize(2),1],nFOV,1);
+origSize = repmat([imHeight,imWidth,1],nFOV,1);
 if ~skipPngs
     for f=1:nFOV
         if ischar(imFiles{f})
@@ -121,7 +154,7 @@ if ~skipPngs
            imOut = makeuint(imresize(im1,pars.imSize),8);
            if pars.figShowLoadedImages
                 figure(pars.figShowLoadedImages); clf;
-                imagesc(imOut); pause(.01); colormap(gray);
+                imagesc(imOut); colormap(gray); pause(.01); 
            end
           imwrite(imOut,[saveFolder,imName,'.png']);
        else % save 3D data
@@ -156,10 +189,21 @@ if ~skipFitting
     else
         do_3D = '';
     end
-    callPython = ['python -m cellpose --dir ',saveFolder,' --pretrained_model ',pars.model,' --diameter ',diameter,' --save_tif --no_npy',gpu,do_3D,' --resample'];
+    if strcmp(pars.device,'default')
+        callPython = ['python -m cellpose --dir ',saveFolder,...
+        ' --pretrained_model ',pars.model,' --diameter ',diameter,...
+        ' --save_tif --no_npy',gpu,do_3D]; % ,' --resample'
+    else
+    callPython = ['python -m cellpose --dir ',saveFolder,...
+        ' --pretrained_model ',pars.model,' --diameter ',diameter,...
+        ' --device ',pars.device,...
+        ' --save_tif --no_npy',gpu,do_3D]; % ,' --resample'
+    end
     % pars.env = 'mlab_cellpose';
-    setEnv = ['activate ', pars.env,' ']; % '! activate cellpose ';
-    cmdOut = ['! ',pars.condaPrompt, ' ', setEnv,' && ',callPython];
+    % setEnv = ['activate ', pars.env,' ']; % '! activate cellpose ';
+    % cmdOut = ['! ',pars.condaPrompt, ' ', setEnv,' && ',callPython];
+    % cmdOut = ['! ',pars.activateConda,' ',pars.env,' && ',callPython];
+    cmdOut = ['! ',cellpose_env,' && ',callPython];
     if pars.verbose
         disp(cmdOut);
     end

@@ -4,12 +4,12 @@ defaults = cell(0,3);
 defaults(end+1,:) = {'parsFile','string',''}; % downsample the polymer step
 defaults(end+1,:) = {'polyStep','integer',5}; % downsample the polymer step
 defaults(end+1,:) = {'timeStep','integer',50}; % downsample the time step
-defaults(end+1,:) = {'TADs','freeType',[300,800,1500,2300,2900,3400]}; % downsample the polymer (in units of monomers)
+defaults(end+1,:) = {'TADs','freeType',[300,800,1500,2300,2900,3400]}; % downsample the polymer (in units of monomers)  % Only for plotting
 defaults(end+1,:) = {'lenPoly','integer',4e3}; % should load from file
 defaults(end+1,:) = {'rptPoly','integer',10}; % should load from file
 defaults(end+1,:) = {'showInfo','boolean',true}; % number of examples per block to load
-defaults(end+1,:) = {'trajFig','integer',2}; % number of examples per block to load
-defaults(end+1,:) = {'avePosFig','integer',3}; % number of examples per block to load
+defaults(end+1,:) = {'trajFig','integer',0}; %
+defaults(end+1,:) = {'avePosFig','integer',0}; % 
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 % pars.parsFile='Z:\Alistair\2022-02-04_PolychromWholeNuc\NT_rad21_v1\rep028\simPars.txt'     
@@ -85,7 +85,6 @@ if pars.trajFig ~= 0
     uni = ones(length(TADs),1);
     t = [0*uni,tSteps*rptPoly*uni,nan*uni]';t= t(:);
     xt = [TADs; TADs; TADs]; xt=xt(:);
-    
 %     figure(pars.trajFig); clf; 
 %     imagesc(imTraj2); colorbar;
 %     hold on; plot(xt,t,'r--');
@@ -96,8 +95,6 @@ if pars.trajFig ~= 0
     [y,x] = find(imTraj2==2);
     figure(3); hold on; plot(x,y,'b.','MarkerSize',1);
     hold on; plot(xt,t,'k.-');
-    
-    
 end
 
 if pars.trajFig ~= 0

@@ -24,11 +24,14 @@ if isempty(rmap)
 end
 
 nB = size(rmap,1);
-pmap = zeros(nB,nB);
+pmap = nan(nB,nB);
 for b=1:nB
     for c=1:nB
+        try
         goodData = ~isinf(rmap(b,:)) & ~isnan(rmap(b,:)) & ~isinf(rmap(:,c)') & ~isnan(rmap(:,c)');
         pmap(b,c) = corr(rmap(b,goodData)',rmap(goodData,c));
+        catch
+        end
     end
 end
 rmap = log2(rmap);

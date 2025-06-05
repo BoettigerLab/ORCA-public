@@ -27,3 +27,8 @@ else
 end
 nObs = nSpots - sum( isnan(distMap),3);
 contFreq = sum(contCount,3)./nObs;
+
+
+% convert nobs to p-value
+%  xi squared or something, there is a contact, no-contact, and N
+% 

@@ -19,7 +19,7 @@ for h=1:numHybes
     else % old format, a number
         readNames = string(eTable.Readouts(h)); 
     end
-    for r=1:numDatChns
+    for r=1:length(readNames)
         k=k+1;
         readout(k) = str2num(readNames{r}); %#ok<ST2NM>
         chn{k} = datChannels{r};

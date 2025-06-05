@@ -6,6 +6,9 @@ function [fovTable,croppedSpots] = SpotsInNucleus(im3D,spotXY,cellBorders,vararg
 % cellBorders - cell array of XY coordinateds of cell borders
 %% Outputs
 % fovTable - table of 3DPSF fitted spots
+%
+%
+%  see also SegmentSpotsPerNucleus (which needs only an image)
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'maxSpotsPerCell','integer',2};

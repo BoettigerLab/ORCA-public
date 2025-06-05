@@ -1,16 +1,20 @@
 function [imTiles,bkd] = FlattenBackground(imTiles,varargin)
-
+% input is a cell array of 2D images 
+%   OR a matrix of 2D images HxWxN where N is number of images
+% 
 % linear noise model. image = p*I + c, where p is the illumination profile
 % and c is a constant pixel background. 
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'smoothRes','positive',1}; % .1
 defaults(end+1,:) = {'removeZeros','boolean',true}; % Translated images are padded with zeros, which can lead to bright borders.  
+defaults(end+1,:) = {'bkdPerc','fraction',.01};
 defaults(end+1,:) = {'bkd','freeType',[]}; % map of illumination background
 defaults(end+1,:) = {'camBkd','freeType',[]}; %empty for zero, 'auto' for compute, otherwise should be a map  
 defaults(end+1,:) = {'backgroundCorrect',{'file','median','medianEdge','none','removeData'},'median'};
-defaults(end+1,:) = {'theta','positive',1.2}; % .1
+defaults(end+1,:) = {'theta','positive',1.2}; % .1  % threshold for "removeData" mode    
 defaults(end+1,:) = {'showPlots','boolean',false};
+defaults(end+1,:) = {'strength','fraction',0.5};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 bkd = 0; % default value for assignment
@@ -18,10 +22,16 @@ bkd = 0; % default value for assignment
 if strcmp(pars.backgroundCorrect,'none')
     return
 else    
-    nTiles = length(imTiles);
-    [h,w] = size(imTiles{1});
-    imType = class(imTiles{1});
-    imStack = double(cat(3,imTiles{:}));
+    if iscell(imTiles)
+        nTiles = length(imTiles);
+        [h,w] = size(imTiles{1});
+        imType = class(imTiles{1});
+        imStack = double(cat(3,imTiles{:}));
+    else
+        imType = class(imTiles);
+        imStack = double(imTiles);
+        [h,w,nTiles] = size(imTiles);
+    end
     if ischar(pars.camBkd)
        camBkd = min(imStack,[],3);
     elseif size(pars.camBkd) > 1
@@ -33,7 +43,7 @@ else
         cprintf([1 0 0],pars.camBkd);
     end
     if pars.removeZeros
-       low = quantile(imStack(:),.005);
+       low = quantile(imStack(:),pars.bkdPerc);
     end
     
 % follow selected program
@@ -57,7 +67,7 @@ else
              theta = pars.theta*loc(1);
              bkdStk = nan(h,w,nTiles);
             for f=1:nTiles
-                im = imTiles{f};
+                im = imStack(:,:,f); % imTiles{f};
                 if pars.removeZeros
                     im(im==0) = low; 
                 end
@@ -98,18 +108,26 @@ else
         bkd = imresize(imresize(bkd,pars.smoothRes),[h,w]);
     end
     
-    sc = quantile(bkd(:),.5);
+    sc = quantile(bkd(:),pars.strength);
     if pars.showPlots
-        imTiles{1} = cast(sc*imStack(:,:,1)./bkd,imType);
+        imOut = cast(sc*imStack(:,:,1)./bkd,imType);
         figure(10); clf;
         subplot(1,3,1); imagesc(IncreaseContrast(bkd,'high',.999)); colorbar; title('background');
         subplot(1,3,2); imagesc(IncreaseContrast(imStack(:,:,1),'high',.999)); colorbar; title('original');
-        subplot(1,3,3); imagesc(IncreaseContrast(imTiles{1},'high',.999)); colorbar;  title('corrected');
+        subplot(1,3,3); imagesc(IncreaseContrast(imOut,'high',.999)); colorbar;  title('corrected');
         pause(1);
     end   
     % apply linear background subtraction
-    for t=1:nTiles
-        imTiles{t} = cast(sc*imStack(:,:,t)./bkd,imType);
+    if iscell(imTiles)
+        for t=1:nTiles
+            imTiles{t} = cast(sc*imStack(:,:,t)./bkd,imType);
+        end
+    else
+        for t=1:nTiles
+            imTiles(:,:,t) = cast(sc*imStack(:,:,t)./bkd,imType);
+        end
     end
 end
 
+
+% imFixed = cast(quantile(bkd(:),.5)*double(imOrig)./bkd,imType);

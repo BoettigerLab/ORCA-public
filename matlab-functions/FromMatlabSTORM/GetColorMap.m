@@ -14,7 +14,7 @@ defaults(end+1,:) = {'flip','boolean',false};
 
 if nargin > 1
     if ~ischar(varargin{1})
-        pts = varargin{1};
+        pts = double(varargin{1});
         varin = varargin(2:end);
     else
         pts = 256;
@@ -107,6 +107,23 @@ catch
             redToYellow(n,:)= [1,.7*n/nPts,0];
         end
         clrmap = flipud([redToYellow;flipud(whiteToYellow)]);
+
+
+      case 'WORBK'
+        nPts = pts;
+        whiteToYellow = zeros(nPts,3);
+        yellowToRed  = zeros(nPts,3);
+        redToBlack  = zeros(nPts,3);
+        redToWhite = zeros(nPts,3); 
+        redToYellow= zeros(nPts,3); 
+        for n=1:nPts
+            yellowToRed(n,:) = [1,(nPts-n+1)/nPts,0];
+            redToBlack(n,:) =  [(nPts-n+1)/nPts,0,0];
+            redToWhite(n,:) = [1,n/nPts,n/nPts];
+            whiteToYellow(n,:) = [1, (nPts-n*.3+.3)/nPts, (nPts-n+1)/nPts];
+            redToYellow(n,:)= [1,.7*n/nPts,0];
+        end
+        clrmap = flipud([flipud(redToBlack);redToYellow;flipud(whiteToYellow)]);
 
       case 'blackCyanOrange'
         nPts = round(pts/2);

@@ -15,7 +15,8 @@ function [daxInHybFov,daxInfoHybFov,rawNameInHybFov,maxNameInHybFov] = LoadDaxFr
 % To add:
 %  CheckRegData -- this should be checked upstream, not here.
 %
-%
+% Updates
+% updated 6/28/2024 to allow new-style of drift-correct-table
 
 defaults = cell(0,3);
 defaults(end+1,:) = {'dataType',{'fiducial','data','all'},'all'}; % changed from 'data'
@@ -60,9 +61,9 @@ elseif istable(eTableXLS)
     eTable = eTableXLS;
     dataFolder = pars.dataFolder;
 end
-
-[~,frameChannels,channels,~,dataChns] = GetFidChnFromTable(eTable);  %
-fidChnName = setdiff(channels,dataChns);
+%  % moved down
+% [~,frameChannels,channels,~,dataChns] = GetFidChnFromTable(eTable,'hyb',pars.hybNumber);  %
+% fidChnName = setdiff(channels,dataChns);
 hybFolders = eTable.FolderName;
 
 if isempty(pars.saveFolder)
@@ -88,8 +89,13 @@ if strcmp(pars.hybType,'B') % return only barcode hybs
     hybs = Row(intersect(hybs,find(barcodeHybes)));
 end
 
+% moved down, to allow function to be called to load from folders not
+% starting with 1 (hyb will be updated to the first hyb containing B)
+[~,frameChannels,channels,~,dataChns] = GetFidChnFromTable(eTable,'hyb',hybs(1));  %
+fidChnName = setdiff(channels,dataChns);
+
 % get requested FOV
-currFolder = [dataFolder,hybFolders{1},filesep];
+currFolder = [dataFolder,hybFolders{1},filesep];  % assumes all hybes have save number of FOVs as in fist row  
 rawDaxFiles = cellstr(ls([currFolder,pars.daxRootDefault]));
 if isinf(pars.fov)
     pars.fov = 1:length(rawDaxFiles);
@@ -216,11 +222,21 @@ if pars.fixDrift && pars.readDax
     end
     for f=pars.fov
         try
-            regTable = readtable([pars.driftFolder,'fov',num2str(f,'%03d'),'_regData.csv']);
+            oldDrift = [pars.driftFolder,'fov',num2str(f,'%03d'),'_regData.csv'];
+            newDrift = [pars.driftFolder,'alignTable_fov',num2str(f-1,'%03d'),'.csv'];
+            if exist(newDrift,'file')
+                regTable = readtable(newDrift);
+                o=1; % in the new format, the reference is in the first line 
+                % even though the shifts are all 0s the ref name gets
+                % recorded this way
+            elseif exist(oldDrift,'file')
+                regTable = readtable(oldDrift);
+                o=0;
+            end
             regStruct = table2struct(regTable);
             for h= hybs
                 for d=1:numDatas
-                    daxInHybFov{h,f,d} = ApplyReg(daxInHybFov{h,f,d},regStruct(h));
+                    daxInHybFov{h,f,d} = ApplyReg(daxInHybFov{h,f,d},regStruct(h+o));
                 end
             end
         catch er

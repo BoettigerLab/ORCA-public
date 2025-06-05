@@ -50,6 +50,8 @@ try
     dCS = diff(CS);
     mindiff = min(nonzeros(dCS));
     CS(~isUnique) = CS(~isUnique)+ mindiff/5;
+    
+    CS = linspace(0,CS(end),n);
     dd = interp1(CS, d, unique([linspace(0,CS(end),parameters.interpPts*n)]),parameters.method); % Interpolate at 100 equally spaced locations from the start to end of your curve. Use 'spline' interpolation. Also, throw in the original points as part of your output since this was requested.
 
 
@@ -85,9 +87,9 @@ if parameters.plot
                  cmap1 = interp1(CS, cmap(:,1), unique([linspace(0,CS(end),parameters.interpPts*n)]),'linear'); 
                  cmap2 = interp1(CS, cmap(:,2), unique([linspace(0,CS(end),parameters.interpPts*n)]),'linear'); 
                  cmap3 = interp1(CS, cmap(:,3), unique([linspace(0,CS(end),parameters.interpPts*n)]),'linear'); 
-                % cmap1 = interp1(CS, cmap(:,1), unique([linspace(0,CS(end),parameters.interpPts*n)]),parameters.method); 
-                % cmap2 = interp1(CS, cmap(:,2), unique([linspace(0,CS(end),parameters.interpPts*n)]),parameters.method); 
-                % cmap3 = interp1(CS, cmap(:,3), unique([linspace(0,CS(end),parameters.interpPts*n)]),parameters.method); 
+%                 cmap1 = interp1(CS, cmap(:,1), unique([linspace(0,CS(end),parameters.interpPts*n)]),parameters.method); 
+%                 cmap2 = interp1(CS, cmap(:,2), unique([linspace(0,CS(end),parameters.interpPts*n)]),parameters.method); 
+%                 cmap3 = interp1(CS, cmap(:,3), unique([linspace(0,CS(end),parameters.interpPts*n)]),parameters.method); 
                 cmap = [cmap1',cmap2',cmap3'];
                 cmap(cmap<0) = 0;
                 cmap(cmap>1) = 1;
@@ -106,9 +108,9 @@ if parameters.plot
 end 
    
 if parameters.showInterp
-    figure; clf; hold on
-    plot3(dd(:,1),dd(:,2),dd(:,3),'.r-')
-    plot3(d(:,1),d(:,2),d(:,3),'ob-')
+    figure; clf; 
+    plot3(d(:,1),d(:,2),d(:,3),'ob-'); hold on;
+    plot3(dd(:,1),dd(:,2),dd(:,3),'.r-');
     axis image, view(3), legend({'Original','Interp. Spline'})
 end
     

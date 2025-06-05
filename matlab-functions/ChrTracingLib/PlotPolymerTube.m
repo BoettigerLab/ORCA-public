@@ -3,12 +3,12 @@ function tubeFig = PlotPolymerTube(xyz,varargin)
 defaults = cell(0,3);
 defaults(end+1,:) = {'fillmissing','boolean',true}; % 
 defaults(end+1,:) = {'shortestPath','boolean',false}; 
+defaults(end+1,:) = {'showInterp','boolean',false}; 
 defaults(end+1,:) = {'tubeRadius','positive',20};
 defaults(end+1,:) = {'sphereRadius','positive',30};
 defaults(end+1,:) = {'showSpheres','boolean',true};
 defaults(end+1,:) = {'showTube','boolean',true};
 defaults(end+1,:) = {'w','positive',1200}; % box size
-defaults(end+1,:) = {'maxJump','positive',inf}; % box size
 defaults(end+1,:) = {'numColors','positive',[]}; % box size
 defaults(end+1,:) = {'cent','array',[]}; % box size
 defaults(end+1,:) = {'colormap','colormap','hsvCut'}; 
@@ -24,6 +24,14 @@ defaults(end+1,:) = {'center','boolean',true};
 defaults(end+1,:) = {'interpPts','positive',10}; 
 defaults(end+1,:) = {'applyColorMap','boolean',true};  
 defaults(end+1,:) = {'number','boolean',false}; % obsolete 
+defaults(end+1,:) = {'view','freeType',[]};
+% parameters for removeJumps
+defaults(end+1,:) = {'maxJump','positive',inf}; % box size
+defaults(end+1,:) = {'localRegion','integer',4}; % number of points in front and behind to use for estimating expected position 
+defaults(end+1,:) = {'maxDiff','positive',2}; % fold change greater than the median step size of other points from their local area which is acceptable
+defaults(end+1,:) = {'maxAbsStep','positive',inf}; % maximum absolute step size
+defaults(end+1,:) = {'removeLoners','boolean',false}; % if a point is the only one within its local region, drop it. 
+
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 w= pars.w; 
@@ -52,18 +60,23 @@ else
     % truncate out NaNs (not sure this is desired)
     skip = isnan(xyz(:,1));
     polyData(skip,:) = []; 
-    % fill missing (only done for the tube)
+
+    if ~isinf(pars.maxJump)    
+        xyz = RemoveJumps(xyz,'maxAbsStep',pars.maxJump,'localRegion',pars.localRegion,'maxDiff',pars.maxDiff);
+        xyz_raw = xyz;
+        % jumps = nanmean(squareform(pdist(xyz))) > pars.maxJump;% [false; sqrt(sum(diff(xyz,1,1).^2,2)) > pars.maxJump]; % not ideal, both the step out and the step back are too big 
+        % xyz(jumps,:) = nan;
+        % xyz = fillmissing(xyz,'linear');
+        % xyz_raw(jumps,:) = nan; %
+    end
+
+    % fill missing (only done for the tube, xyz, not xyz_raw)
     if pars.fillmissing
         xyz(1,:) = polyData(1,:)-.1; 
         xyz(end,:) = polyData(end,:)+.1;
         xyz = fillmissing(xyz,'linear');
     end
-    if ~isinf(pars.maxJump)    
-        jumps = [false; sqrt(sum(diff(xyz,1,1).^2,2)) > pars.maxJump]; % not ideal, both the step out and the step back are too big 
-        xyz(jumps,:) = nan;
-        xyz = fillmissing(xyz,'linear');
-        xyz_raw(jumps,:) = nan; %
-    end
+
 
     % setup colormap
     if isempty(pars.numColors)
@@ -78,8 +91,8 @@ else
    % plot    
     if pars.showTube && ~pars.shortestPath
         PlotTube(xyz,'r',pars.tubeRadius,'interpPts',pars.interpPts,'method',pars.method,...
-                 'colormap',cmapOut,'lightingOn',false,'verbose',false,'applyColorMap',pars.applyColorMap); hold on;   
-        set(gca,'color','k'); 
+                 'colormap',cmapOut,'lightingOn',false,'verbose',false,'applyColorMap',pars.applyColorMap,'showInterp',pars.showInterp); hold on;   
+        set(gca,'color','w'); 
         shading flat;
         hold on;  
         alpha(pars.alpha);  
@@ -112,6 +125,10 @@ else
         cent = pars.cent;
     end
     
+
+    if ~isempty(pars.view)
+        view(pars.view);
+    end
     
     if pars.lightOn
         material dull;
@@ -129,7 +146,7 @@ else
             'facecol','no',...
             'edgecol', 'flat',... %
             'linew',pars.tubeRadius); 
-        set(gca,'color','k');
+        set(gca,'color','w');
         if pars.applyColorMap
             colormap(cmapOut);
         end

@@ -1,9 +1,17 @@
-function [spotCodeTable,mapData,polyData,codeData] = DecodeSampleBarcodes(eTableXLS,analysisFolder,varargin)
+function [spotCodeTable,mapData,polyData,codeData] = DemultiplexWithCellpose(eTableXLS,analysisFolder,varargin)
 
  % Refs
  % https://cellpose.readthedocs.io/en/latest/command.html
- 
+global activateConda 
+if isempty(activateConda) % try to guess most likely place
+    activateConda = 'C:\ProgramData\Anaconda3\Scripts\activate.bat';
+end
+
+global cellpose_env;
+
 defaults = cell(0,3);
+defaults(end+1,:) = {'driftFolder','string',''};
+defaults(end+1,:) = {'rerunCellpose','boolean',false};
 defaults(end+1,:) = {'scope','string','auto'};
 defaults(end+1,:) = {'nppXY','freeType',[]}; % will read from table eTableXLS info file by default
 defaults(end+1,:) = {'verbose','boolean',true}; 
@@ -19,9 +27,9 @@ defaults(end+1,:) = {'nucDiameter','nonnegative',0}; % 0 = autodetect  a fixed d
 defaults(end+1,:) = {'refHyb','integer',0}; % By default will try to guess using the regData.csv.  This is the hyb in expTable.xlsx used as alignment reference.  We will use this hyb for matching the spots into their segmented cells
 defaults(end+1,:) = {'maxProject','boolean',true}; % use full 3D stack or just max project.
 defaults(end+1,:) = {'nucleiImageRoot','string','fidMax_ConvZscan'}; % filename root of 2D images for cellpose
+defaults(end+1,:) = {'cellposeImage',{'default','sumBarcodeData'},'sumBarcodeData'}; % filename root of 2D images for cellpose
 defaults(end+1,:) = {'contrastHigh','fraction',.995}; % contrast for cellpose
 defaults(end+1,:) = {'contrastLow','fraction',.0}; % contrast for cellpose
-
 % plotting
 defaults(end+1,:) = {'saveFigure','boolean',true}; 
 defaults(end+1,:) = {'plotResults','boolean',true}; 
@@ -32,7 +40,9 @@ defaults(end+1,:) = {'showFOVfig','integer',0};
 defaults(end+1,:) = {'overlayFig','integer',10}; 
 defaults(end+1,:) = {'tileFig','integer',11}; 
 % python path stuff
-defaults(end+1,:) = {'cellpose_env','string','mlab_cellpose'}; 
+defaults(end+1,:) = {'cellpose_env','string',cellpose_env}; 
+defaults(end+1,:) = {'activateConda','string',activateConda};
+
 
 pars = ParseVariableArguments(varargin,defaults,'DecodeSampleBarcodes');
 
@@ -71,71 +81,17 @@ if runDemultiplex
     % load the experiment table
     eTable = readtable(eTableXLS);
 
-
-    if runCellpose
-        if pars.verbose
-           disp('saving images to run in cellpose'); 
-        end
-        %%  Save downsampled png images to feed to cellpose for segmentation
-        % this version uses 2D projections for spped 
-        
-        % determine which hyb was the refHyb
-        if pars.refHyb == 0
-            regData = FindFiles([analysisFolder,'fov*_regData.csv']);
-            regTable = readtable(regData{1});
-            pars.refHyb = find(regTable.xshift==0 & regTable.yshift==0  & regTable.xshift2==0  & regTable.yshift2==0);  
-            pars.refHyb = pars.refHyb(1); % enforce single
-        end
-        
-        root = pars.nucleiImageRoot;
-        dataFolder = [fileparts(eTableXLS),'\'];
-        nucleiFolder = [dataFolder,eTable.FolderName{pars.refHyb}];
-        fidMaxFiles = FindFiles([nucleiFolder,'\',root,'*.dax']);
-        if isempty(fidMaxFiles)
-            error(['no dax files found in ', nucleiFolder]);
-        end
-        % hybFolders = FindFiles([dataFolder,'Hyb*']);
-        % fidMaxFiles = FindFiles([hybFolders{1},'\fidMax_ConvZscan*.dax'])
-        % fidMaxFiles = FindFiles([hybFolders{1},'\dat647Max_ConvZscan*.dax'])
-        nFOV = length(fidMaxFiles);
-        for f=1:nFOV
-            im1 = ReadDax(fidMaxFiles{f},'verbose',pars.veryverbose);
-            [~,imName] = fileparts(fidMaxFiles{f});
-            imOut = makeuint(imresize(im1,pars.nucImSize),8);
-            imOut = IncreaseContrast(imOut,'high',pars.contrastHigh,'low',pars.contrastLow);
-           if pars.figShowLoadedImages
-                figure(pars.figShowLoadedImages); clf;
-                imagesc(imOut); pause(.01); colormap(gray);
-           end
-          imwrite(imOut,[saveFolder,imName,'.png']);
-        end
-        sc = size(im1,1)./pars.nucImSize(1); % rescaling factor
-
-        %%  Run Cellpose!
-        if pars.verbose
-            disp('running cellpose to ID nuclei, please wait...');
-        end
-        % this is 2D, since we're running on 2D images based on above 
-        %  a fixed diameter is substantially faster, and may improve uniformity. 
-        tic
-        diameter = num2str(pars.nucDiameter);
-        callPython = ['python -m cellpose --dir ',saveFolder,' --pretrained_model nuclei --diameter ',diameter,' --save_tif --no_npy --use_gpu'];
-        setEnv = ['! activate ',pars.cellpose_env, ' '];% '! activate mlab_cellpose '; % '! activate cellpose ';
-        cmdOut = [setEnv,' && ',callPython];
-        if pars.verbose
-            disp(cmdOut);
-        end
-        eval(cmdOut); % should move to system Run 
-        toc
-    end
-
-    %%
+    
+    %% load barcode data
     if pars.verbose
         disp('loading barcode data...');
     end
     % this handles the dift correction assuming the eTableXLS includes the
     % barcode hybes and that this eTableXLS was used in running ChrTracer
     % (rather than a different one ommitting the barcode hybs). 
+    if isempty(pars.driftFolder)
+        pars.driftFolder = analysisFolder;
+    end
     [imMax,imInfo] = LoadDaxFromEtable(eTableXLS,...
         'hybNumber',inf,...
         'fov',inf,...
@@ -143,7 +99,7 @@ if runDemultiplex
         'dataType','data',...
         'fixDrift',true,...
         'maxProject',pars.maxProject,...
-        'driftFolder',analysisFolder,...
+        'driftFolder',pars.driftFolder,...
         'verbose',pars.verbose);
     imMax0 = imMax; % backup for debugging only.
     % remove empty spaces for skipped hybs
@@ -186,8 +142,111 @@ if runDemultiplex
     reads = datPropTable.readout;
     idZero = find(reads==0);
     imMax(idZero,:) = []; %#ok<FNDSB>
-
     [nB,nFOV] = size(imMax);
+
+
+    fitFiles = FindFiles([analysisFolder,'fov*_AllFits.csv']);
+    if length(fitFiles) < nFOV
+        nFOV = length(fitFiles);
+    end
+
+    % flatten background
+    %   This could be faster if we just compute once and apply to each
+    bkds = cell(nB,1);
+    for b=1:nB
+        temp2 = cellfun(@(x) IncreaseContrast(x,'high',.9999,'low',0),imMax(b,:),'UniformOutput',false);
+        [temp2,bkds{b}] = FlattenBackground(temp2,'showPlots',false); % set showPlots to true for troubleshooting
+        imMax(b,:) = temp2;
+    end
+
+  
+    if strcmp(pars.cellposeImage,'sumBarcodeData')
+        cellposeTargets = cell(nFOV,1);
+        for f= 1:nFOV
+            imBarF =  cat(3,imMax{:,f});  
+            % figure(10); clf;Ncolor(imBarF); axis image;
+            cellposeTargets{f} = max(IncreaseContrast(imBarF,'high',.9999,'low',0),[],3);
+        end
+        % figure(1); clf; imagesc(imBar); colormap('gray');
+        % %  not needed if we flatten the images up front
+        % [cellposeTargets,bkd] = FlattenBackground(cellposeTargets,'showPlots',true); % set showPlots to true for troubleshooting
+        % figure(2); clf; imagesc(bkd); colorbar;
+    end
+
+
+    if runCellpose
+        if pars.verbose
+           disp('saving images to run in cellpose'); 
+        end
+        %%  Save downsampled png images to feed to cellpose for segmentation
+        % this version uses 2D projections for speed 
+        
+        % determine which hyb was the refHyb
+        if pars.refHyb == 0
+            regData = FindFiles([analysisFolder,'fov*_regData.csv']);
+            regTable = readtable(regData{1});
+            pars.refHyb = find(regTable.xshift==0 & regTable.yshift==0  & regTable.xshift2==0  & regTable.yshift2==0);  
+            pars.refHyb = pars.refHyb(1); % enforce single
+        end
+        
+        root = pars.nucleiImageRoot;
+        dataFolder = [fileparts(eTableXLS),'\'];
+        nucleiFolder = [dataFolder,eTable.FolderName{pars.refHyb}];
+        fidMaxFiles = FindFiles([nucleiFolder,'\',root,'*.dax']);
+        if isempty(fidMaxFiles)
+            error(['no dax files found in ', nucleiFolder]);
+        end
+        % hybFolders = FindFiles([dataFolder,'Hyb*']);
+        % fidMaxFiles = FindFiles([hybFolders{1},'\fidMax_ConvZscan*.dax'])
+        % fidMaxFiles = FindFiles([hybFolders{1},'\dat647Max_ConvZscan*.dax'])
+        nFOV = length(fidMaxFiles);
+        try
+        for f=1:nFOV
+            if strcmp(pars.cellposeImage,'sumBarcodeData')
+                im1 = cellposeTargets{f};
+                imName = ['barcodeMax_',num2str(f,'%03d')];
+            else
+                im1 = ReadDax(fidMaxFiles{f},'verbose',pars.veryverbose);
+                [~,imName] = fileparts(fidMaxFiles{f});
+            end
+            imOut = makeuint(imresize(im1,pars.nucImSize),8);
+            imOut = IncreaseContrast(imOut,'high',pars.contrastHigh,'low',pars.contrastLow);
+           if pars.figShowLoadedImages
+                figure(pars.figShowLoadedImages); clf;
+                imagesc(imOut); pause(.01); colormap(gray);
+           end
+          imwrite(imOut,[saveFolder,imName,'.png']);
+        end
+        sc = size(im1,1)./pars.nucImSize(1); % rescaling factor
+        catch er
+            disp(er.getReport);
+            disp('debug here');
+        end
+        %%  Run Cellpose!
+        if pars.verbose
+            disp('running cellpose to ID nuclei, please wait...');
+        end
+        % this is 2D, since we're running on 2D images based on above 
+        %  a fixed diameter is substantially faster, and may improve uniformity. 
+
+        allMasks = FindFiles([saveFolder,'*_cp_masks.tif']);
+        if isempty(allMasks) || pars.rerunCellpose
+            tic
+            diameter = num2str(pars.nucDiameter);
+            callPython = ['python -m cellpose --dir ',saveFolder,' --pretrained_model nuclei --diameter ',diameter,' --save_tif --no_npy --use_gpu'];
+            
+            % setEnv = ['! activate ',pars.cellpose_env, ' '];% '! activate mlab_cellpose '; % '! activate cellpose ';
+            % cmdOut = ['! ',pars.activateConda,' ',pars.cellpose_env,' && ',callPython];
+            cmdOut = ['! ',pars.cellpose_env,' && ',callPython];
+            if pars.verbose
+                disp(cmdOut);
+            end
+            eval(cmdOut); % should move to system Run 
+            toc
+        end
+    end
+
+   
     %% Load the mask and score barcode values by cell
     % First we load the masks and we load the ChrTracer data
     % Then we match spots & traces to Cell IDs
@@ -207,7 +266,7 @@ if runDemultiplex
     cellTables = cell(nFOV,1);
     currCellTotal = 0;
     currTraceTotal = 0;
-    for f=1:nFOV %    f=2
+    for f=1:nFOV %    f=18
         if pars.veryverbose
            disp(['loading FOV ',num2str(f), ' of ',num2str(nFOV)]); 
         end
@@ -218,55 +277,82 @@ if runDemultiplex
         nCells = length(cellProps);
         if pars.figShowLoadedImages
             figure(pars.figShowLoadedImages); clf; 
-            imagesc(mask1); GetColorMap('distColors',nCells);
+            imagesc(mask1); GetColorMap('distColorsW',nCells);
             title(['FOV=',num2str(f), ' of ',num2str(nFOV)]);
         end
-         % --- load ORCA AllFits table    
-         orcaTable = readtable([analysisFolder,'fov',num2str(f,'%03d'),'_AllFits.csv']);
-         [polys{f},maps{f},spotData] = TableToPolymer(orcaTable,'bins',pars.bins);  % why is this hanging sometimes? this was supposed to be faster
-         % assign cell ID based on the ID of the underlying pixel in the
-         % segmented map. 
-         traceXY = round(spotData/pars.nppXY/sc); 
-         nSpots = size(traceXY,1);
-         [nRows,nCols] = size(mask1);
-         cellIDfov = zeros(nSpots,1);
-         for s=1:nSpots
-             xi = traceXY(s,1);
-             yi = traceXY(s,2);
-             xi = max([min([xi,nRows]),1]);
-             yi = max([min([yi,nCols]),1]);
-             cellIDfov(s) = mask1(yi,xi);
-         end
-        % store fov data in fov table for traces
-        traceID = (1:nSpots)' + currTraceTotal;
-        traceX = traceXY(:,1); % position is relative to fixed 512x512 barcode image
-        traceY = traceXY(:,2); % position is relative to fixed 512x512 barcode image
-        cellUID = cellIDfov + currCellTotal;
-        traceTables{f} = table(traceID,traceX,traceY,cellIDfov,cellUID);
-        currTraceTotal = currTraceTotal + nSpots;
-        
-        % get the full barcode pattern in each cell  
-        cellBarcodeAves = zeros(nCells,nB);
-        for c=1:nCells
-            for b=1:nB 
-                imSmall = imresize(imMax{b,f},1./sc) ;
-                cellBarcodeValues = imSmall(cellProps(c).PixelIdxList);
-                cellBarcodeAves(c,b) = median(cellBarcodeValues);
+        try
+             % --- load ORCA AllFits table    
+             orcaTable = readtable([analysisFolder,'fov',num2str(f,'%03d'),'_AllFits.csv']);
+             [polys{f},maps{f},spotData] = TableToPolymer(orcaTable,'bins',pars.bins);  % why is this hanging sometimes? this was supposed to be faster
+             % assign cell ID based on the ID of the underlying pixel in the
+             % segmented map. 
+             traceXY = round(spotData/pars.nppXY/sc); 
+             nSpots = size(traceXY,1);
+             [nRows,nCols] = size(mask1);
+             cellIDfov = zeros(nSpots,1);
+             for s=1:nSpots
+                 xi = traceXY(s,1);
+                 yi = traceXY(s,2);
+                 xi = max([min([xi,nRows]),1]);
+                 yi = max([min([yi,nCols]),1]);
+                 cellIDfov(s) = mask1(yi,xi);
+             end
+            if pars.figShowLoadedImages
+                figure(pars.figShowLoadedImages); hold on;
+                plot(traceXY(:,1),traceXY(:,2),'k.','MarkerSize',20);
+                plot(traceXY(:,1),traceXY(:,2),'w.','MarkerSize',10);
+                % 
+                % figure(2); clf;
+                %  im1 = ReadDax(fidMaxFiles{f},'verbose',pars.veryverbose);
+                % [~,imName] = fileparts(fidMaxFiles{f})
+                % im1s = IncreaseContrast(imresize(im1,[512,512]),'high',.999,'low',.2);
+                % mask = boundarymask(mask1); 
+                % imOut =labeloverlay(im1s,mask,'Transparency',0);
+                % imagesc(imOut);
+                % 
+                % 
+                % % f=18
+                % orcaTable = readtable([analysisFolder,'fov',num2str(f,'%03d'),'_AllFits.csv']);
+                % [polys{f},maps{f},spotData] = TableToPolymer(orcaTable,'bins',pars.bins); 
+                % figure(2); clf; imagesc(im1); hold on; colormap('default');
+                % plot(spotData(:,1)/pars.nppXY,spotData(:,2)/pars.nppXY,'k.','MarkerSize',20);
+                % plot(spotData(:,1)/pars.nppXY,spotData(:,2)/pars.nppXY,'w.','MarkerSize',10);
             end
-        end       
-        % store cell data in table for cells
-        if nCells > 0
-            cellIDfov_c = (1:nCells)';
-            cellUID_c = cellIDfov_c + currCellTotal; % need unique names,
-            cellXY = cat(1,cellProps(:).Centroid);        
-            cellX = cellXY(:,1); % position is relative to fixed 512x512 barcode image
-            cellY = cellXY(:,2);  % position is relative to fixed 512x512 barcode image
-            fov = f*ones(nCells,1);
-            barcodeValues = array2table(cellBarcodeAves);
-            cellTable_f = table(cellUID_c,cellIDfov_c,cellX,cellY,fov);
-            cellTable_f = cat(2,cellTable_f,barcodeValues);
-            cellTables{f} = cellTable_f;
-            currCellTotal = currCellTotal + nCells;
+
+            % store fov data in fov table for traces
+            traceID = (1:nSpots)' + currTraceTotal;
+            traceX = traceXY(:,1); % position is relative to fixed 512x512 barcode image
+            traceY = traceXY(:,2); % position is relative to fixed 512x512 barcode image
+            cellUID = cellIDfov + currCellTotal;
+            traceTables{f} = table(traceID,traceX,traceY,cellIDfov,cellUID);
+            currTraceTotal = currTraceTotal + nSpots;
+            
+            % get the full barcode pattern in each cell  
+            cellBarcodeAves = zeros(nCells,nB);
+            for c=1:nCells
+                for b=1:nB 
+                    imSmall = imresize(imMax{b,f},1./sc) ;
+                    cellBarcodeValues = imSmall(cellProps(c).PixelIdxList);
+                    cellBarcodeAves(c,b) = median(cellBarcodeValues);
+                end
+            end       
+            % store cell data in table for cells
+            if nCells > 0
+                cellIDfov_c = (1:nCells)';
+                cellUID_c = cellIDfov_c + currCellTotal; % need unique names,
+                cellXY = cat(1,cellProps(:).Centroid);        
+                cellX = cellXY(:,1); % position is relative to fixed 512x512 barcode image
+                cellY = cellXY(:,2);  % position is relative to fixed 512x512 barcode image
+                fov = f*ones(nCells,1);
+                barcodeValues = array2table(cellBarcodeAves);
+                cellTable_f = table(cellUID_c,cellIDfov_c,cellX,cellY,fov);
+                cellTable_f = cat(2,cellTable_f,barcodeValues);
+                cellTables{f} = cellTable_f;
+                currCellTotal = currCellTotal + nCells;
+            end
+        catch er
+            warning(er.message);
+            warning(er.getReport);
         end
         % combine info into tables
     end
@@ -298,9 +384,17 @@ if runDemultiplex
         else
             codebook = pars.codebook;
         end
-        codebookBarcodes = codebook{1,2:end}; % record the barcode numbers used
-        codebookNames = codebook{2:end,1};
-        codeMatrix = codebook{2:end,2:end};
+        if ~strcmp(codebook.Properties.VariableNames{1},'Var1')
+           codebookBarcodes = codebook.Properties.VariableNames(2:end); % record the barcode numbers used
+            codebookNames = codebook{:,1};
+            codeMatrix = codebook{:,2:end};  
+        else
+            disp(codebook);
+            codebookBarcodes = codebook{1,2:end}; % record the barcode numbers used
+            codebookNames = codebook{2:end,1};
+            codeMatrix = codebook{2:end,2:end};
+            disp(codeMatrix);
+        end
     else
         warning('no codebook provided. Assuming each barcode is a unique cell type');
         codeMatrix = eye(nB);
@@ -400,7 +494,13 @@ if runDemultiplex
             isIn = spotCodeTable.fov==fov;
             xyA = [spotCodeTable.traceX(isIn),spotCodeTable.traceY(isIn)]; % spotCodeTable{isIn,1:2};
             hold on; plot(xyA(:,1),xyA(:,2),'k.','MarkerSize',20)
-            hold on; plot(xyA(:,1),xyA(:,2),'w.')
+            % hold on; plot(xyA(:,1),xyA(:,2),'w+')
+            % missed spots
+                isIn = spotCodeTable.fov==fov & spotCodeTable.spotGroup==0;
+                xy = [spotCodeTable.traceX(isIn),spotCodeTable.traceY(isIn)]; % {isIn,1:2};
+                subF.NextPlot = 'add';
+                plot(subF,xy(:,1),xy(:,2),'+','color','w','MarkerSize',16);
+            % assigned sopts
             for g=1:nG  
                 isIn = spotCodeTable.fov==fov & spotCodeTable.spotGroup==g;
                 isLow = isIn & spotCodeTable.contrast<1.5;

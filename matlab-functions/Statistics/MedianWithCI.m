@@ -7,7 +7,8 @@ function [dataMed,dataCI] = MedianWithCI(data,varargin)
 % and the 95% confidence intervals by bootstrapping as the second output. 
 %
 % MedianWithCI(data,'cI',99) 
-% returns the 99% confifidence intervals.  
+% returns the 99% condfidence intervals.  
+% 1 - (.05)^(1/2) ~ 78% condfidence interval. Non-overlapping are <.05 different.   
 %
 % MedianWithCI(data,'iters',1E3)
 % changes the number of iterations.  
@@ -21,7 +22,7 @@ function [dataMed,dataCI] = MedianWithCI(data,varargin)
 % Default variables
 % -------------------------------------------------------------------------
 defaults = cell(0,3);
-defaults(end+1,:) = {'cI', 'positive', 95};
+defaults(end+1,:) = {'cI', 'positive', 100*(1 - (.05)^(1/2))};
 defaults(end+1,:) = {'iters', 'positive', 1000};
 defaults(end+1,:) = {'verbose', 'boolean', true};
 % -------------------------------------------------------------------------
@@ -43,6 +44,8 @@ parameters = ParseVariableArguments(varargin, defaults, mfilename);
 %%
 lowLim = (100 -parameters.cI)/2;
 highLim = 100 - lowLim;
+dataCI = NaN;
+dataMed = NaN;
 
 % vector
 if ~iscell(data) && min(size(data)) == 1

@@ -18,7 +18,7 @@ names = fields(datInfo);
 values = struct2cell(datInfo);
 numVals = length(names);
 for i=1:numVals
-    if ~ischar(values{i})
+    if ~ischar(values{i}) && ~isstring(values{i})
         value = num2str(values{i});
     else
         value = values{i};

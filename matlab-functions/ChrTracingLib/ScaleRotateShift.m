@@ -1,5 +1,7 @@
 function im = ScaleRotateShift(im,alignValues,varargin)
 % im = ScaleRotateShift(im,alignValues)
+% 
+%  OBSOLETE -- see ApplyReg
 %% Inputs
 % image im
 % alignValues.rescale
@@ -27,6 +29,8 @@ function im = ScaleRotateShift(im,alignValues,varargin)
 % Updates
 % rewritten from scratch 2019-10-23, preserving backwards compatability
 % new version allows order of operations to be changed more elegantly. 
+% 
+% see also ApplyReg
 
     defaults = cell(0,3);
     defaults(end+1,:) = {'rescaleShifts','float',1};
@@ -76,6 +80,7 @@ function im = ImScale(im,alignValues,varargin)
     defaults(end+1,:) = {'rescaleShifts','float',1};
     pars = ParseVariableArguments(varargin,defaults,mfilename);
     if isfield(alignValues,'rescale')
+
         sc =alignValues.rescale; % 1-(1-alignValues.rescale)*pars.rescaleShifts;
         if pars.invert
            sc = 1/sc; 

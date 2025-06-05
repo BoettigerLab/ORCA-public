@@ -1,9 +1,12 @@
-function [polymer,distMap,spotData] = TableToPolymer(dTable,varargin)
+function [polymer,distMap,spotData,extras] = TableToPolymer(dTable,varargin)
 % Inputs
 % dTable - either the path to an AllFits table or the loaded table.
 % 
 % Outputs 
 % polymer, distMap, spotData
+% polymer = 3D matrix, bins x dims (xy or xyz) x nCells
+% distMap = 3D matrix, bins x bins x nCells of 3D distances 
+% extras = 3D matrix, bins x 7dims x nCells, 7 dims = h, wx, wy, wz, a, b, fitQuality
 %  
 % Update History
 % adapted from TableToDistMap to create a sleaker, non-backwards compatible
@@ -22,6 +25,8 @@ defaults(end+1,:) = {'dataBasedDriftCorrect','boolean',false};
 defaults(end+1,:) = {'removeBlank','boolean',false};
 defaults(end+1,:) = {'shiftSign','integer',1};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
+
+extras = []; % 
 
 % save some speed
 computeDistMap = pars.computeDistMap;
@@ -111,37 +116,48 @@ switch pars.sortMethod
         %       exclude 'B'-barcodes, 'A'-chromatic aligns
         isDat = (strcmp(dTable.dataType,'H') | strcmp(dTable.dataType,'R')) & dTable.readout~=0 ; 
         datTable = dTable(isDat,:);
-        nReads = max(datTable.readout(strcmp(datTable.dataType,'H'))); % the readout number of the largest hyb 
-        
-        % initialize matrices, make space for rpts
-        isRpt = strcmp(datTable.dataType,'R');
-        rptCodes = unique(datTable.readout(isRpt));
-        nRpts = length(rptCodes);
-        for r=1:length(rptCodes)
-            isR = datTable.readout == rptCodes(r) & isRpt;
-            datTable.readout(isR) = nReads + r; % assign new positions to rpt to be at end of matrix
-        end
+
         if pars.bins==0
+            nReads = max(datTable.readout(strcmp(datTable.dataType,'H'))); % the readout number of the largest hyb 
+            
+            % initialize matrices, make space for rpts
+            isRpt = strcmp(datTable.dataType,'R');
+            rptCodes = unique(datTable.readout(isRpt));
+            nRpts = length(rptCodes);
+            for r=1:length(rptCodes)
+                isR = datTable.readout == rptCodes(r) & isRpt;
+                datTable.readout(isR) = nReads + r; % assign new positions to rpt to be at end of matrix
+            end
             bins = nReads+nRpts; 
-        elseif pars.bins < nReads + nRpts
-            bins = nReads+nRpts; 
+            % elseif pars.bins < nReads + nRpts
+            %     bins = nReads+nRpts; 
         else
             bins = pars.bins; % still need to reassign rpts, even with fixed bins 
         end
         distMap = nan(bins,bins,nPolys);
         polymer = nan(bins,length(dims),nPolys);     
         spotData = nan(nPolys,2);
+        extras = nan(bins,7);
         
         % populate matrices and compute distances
         for s=1:nPolys    
             sTable = datTable(datTable.fs==spotIDs(s),:);
+            % shift readouts 
+            rs = [sTable.readout]; %  readouts;
+            rs = rs - min(rs) + 1;
+            keepReads = rs<=bins;
+            rs(~keepReads) = [];
+           
+            %-----
             if ~isempty(sTable)
                 spotData(s,:) = [sTable.locusX(1),sTable.locusY(1)];
                 if pars.chromCorrect
                     xyzChromShift = [sTable.xcShift,sTable.ycShift,sTable.zcShift];
-                    polymer(sTable.readout,:,s) = sTable{:,dims} + pars.shiftSign*xyzChromShift(:,dims);
+                    polymer(rs,:,s) = sTable{keepReads,dims} + pars.shiftSign*xyzChromShift(keepReads,dims);
+                    extras(rs,:,s) = sTable{keepReads,[4:9,16]};
                 else
-                    polymer(sTable.readout,:,s) = sTable{:,dims};
+                    polymer(rs,:,s) = sTable{keepReads,dims};
+                    extras(rs,:,s) = sTable{keepReads,[4:9,16]};
                 end 
                 if computeDistMap
                     distMap(:,:,s) = squareform(pdist(polymer(:,:,s)));
@@ -175,11 +191,7 @@ if pars.dataBasedDriftCorrect
     newPolymer(2:end,:,:)=newPolymer(2:end,:,:) - repmat(meanOff,[1,1,nPolys]);
     newMap = distMap;
     for n=1:nPolys
-        if pars.dims == 3
-            newMap(:,:,n) = squareform( pdist( newPolymer(:,:,n)  ));
-        else
-            newMap(:,:,n) = squareform( pdist( newPolymer(:,:,n)  ));
-        end
+        newMap(:,:,n) = squareform( pdist( newPolymer(:,:,n)  ));
     end
     % 
      figure(2); clf; 

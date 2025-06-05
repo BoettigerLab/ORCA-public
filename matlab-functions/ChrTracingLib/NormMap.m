@@ -21,7 +21,7 @@ if strcmp(pars.method,'diag')
             norm(r)  = nanmean(diag(imIn,r));
         end
         if ~isnan(norm(r))
-        selMap = boolean(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
+        selMap = logical(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
         normMap =normMap+ norm(r)*double(selMap);
         end
     end
@@ -33,7 +33,7 @@ elseif strcmp(pars.method,'powerlaw')
     normMap = eye(nHybes);
     for r=1:min(nHybes-1, pars.max)
         norm(r)  = r^pars.power;
-        selMap = boolean(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
+        selMap = logical(diag(true(nHybes-r,1),r) + diag(true(nHybes-r,1),-r));
         normMap =normMap+ norm(r)*double(selMap);
     end
     imOut = normMap *sum(imIn(:))/sum(normMap(:)); 

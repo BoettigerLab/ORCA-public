@@ -1,6 +1,25 @@
-function [rr,rr_CI] = RelativeRisk(condition,exposure,varargin)
+function [rr,rr_CI,rr_stdev,RR] = RelativeRisk(condition,exposure,varargin)
 %  [rr,rr_CI] = RelativeRisk(condition,exposure)
 %  [rr,rr_CI] = RelativeRisk(condition,exposure,'cI',.95)
+%  
+% Matrix
+%                          Exposure:
+%                          Yes   No
+%                   Yes   [a     b
+%       Condition: 
+%                   No     c    d]
+%
+%
+%                  a/(a+c)
+%            RR =  -------
+%                 (b/(b+d)
+%
+%
+%       std(log(rr))/sqrt(N) * 
+%
+
+
+
 
 % -------------------------------------------------------------------------
 % Default variables
@@ -21,6 +40,10 @@ end
 pars = ParseVariableArguments(varargin, defaults, mfilename);
 % pars = ParseVariableArguments([], defaults, mfilename);
 
+if nargout < 2
+    pars.iters = 1;  % no need to do iterations if not returning a CI
+end
+
 % condition = pab;
 % exposure = pad;
 
@@ -37,6 +60,7 @@ if pars.iters > 1
     RR = sum(C & E,2)./sum(E,2) ./ (sum(C & ~E,2)./sum(~E,2));
     RR = sort(RR); 
     rr_CI =  RR(round([lowLim,highLim]*pars.iters))';
+    rr_stdev = std(RR);
 else
     rr_CI = NaN;
 end

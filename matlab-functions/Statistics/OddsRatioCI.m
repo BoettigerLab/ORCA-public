@@ -1,4 +1,4 @@
-function [odds,odds_CI,odds_stdev] = OddsRatioCI(condition,exposure,varargin)
+function [odds,odds_CI,odds_stdev,oddsM] = OddsRatioCI(condition,exposure,varargin)
 
 % -------------------------------------------------------------------------
 % Default variables

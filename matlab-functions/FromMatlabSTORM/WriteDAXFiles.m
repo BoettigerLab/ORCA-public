@@ -104,7 +104,7 @@ if pars.overwrite || ~fileExists
         binaryFormat = 'b';
     end
 
-    fid = fopen([infoFile.localPath daxName], 'w');
+    fid = fopen([infoFile.localPath daxName], 'w+');
     if fid<0
         error(['Unable to open ' infoFile.localPath daxName]);
     end

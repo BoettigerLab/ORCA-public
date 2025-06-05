@@ -1,14 +1,19 @@
 function [tform3D,xyzFix,fixDist] = Polymap3D(xyzRef,xyzWarp,varargin)
 % [tform3D,xyzFix] = Polymap3D(xyzRef,xyzWarp,varargin)
+% 
 % takes a two matched lists: xyzRef and xyzWarp. Both are Nx3 arrays of 
 % x,y,z coordinates. The lists are ordered such that the ith element of
 % each list corresponds to the same spot. The lists must be the same
 % length.
+% 
 % Returns tform3D containing the polynomial map,such that:
+% 
 % xyzFix = tforminv(tform3D,xyzWarp(:,1),xyzWarp(:,2),xyzWarp(:,3));
+% 
 % Also returns the result of this transform as an optional second argument
 % For speed, if no plots are requested and only one output is requested,
 % xyzFix will not be computed
+% 
 % 
 % -------------------------------
 % Alistair Boettiger, Jan 2019 CC BY
@@ -26,6 +31,7 @@ defaults(end+1,:) = {'maxPts','nonnegative',1e4};
 defaults(end+1,:) = {'method',{'polynomial','affine'},'polynomial'};
 defaults(end+1,:) = {'bins','array', 0:10:500};
 defaults(end+1,:) = {'units','string', 'nm'};
+defaults(end+1,:) = {'zscale','fraction', .01};
 pars = ParseVariableArguments(varargin,defaults,mfilename);
 
 % max sep
@@ -67,7 +73,7 @@ if pars.showPlots
         s = 1:nPts;
     end
     figure(pars.figMap); clf;
-    subplot(2,2,1);
+    subplot(3,2,1);
     x1 = xyzWarp(s,1); 
     y1 = xyzWarp(s,2);
     u1 = xyzFix(s,1)-xyzWarp(s,1); 
@@ -80,7 +86,7 @@ if pars.showPlots
     plot([xyzRef(s,1),xyzFix(s,1)]',[xyzRef(s,2),xyzFix(s,2)]','-','color',pars.chnColors(1,:)); hold on;
     legend('orig','corrected','target');
     title('xy projection');
-    subplot(2,2,2);
+    subplot(3,2,2);
     x2 = xyzWarp(s,1); 
     y2 = xyzWarp(s,3);
     u2 = (xyzFix(s,1)-xyzWarp(s,1)); 
@@ -93,13 +99,30 @@ if pars.showPlots
     plot([xyzRef(s,1),xyzFix(s,1)]',[xyzRef(s,3),xyzFix(s,3)]','-','color',pars.chnColors(1,:)); hold on;
     legend('orig','corrected','target');
     title('xz projection');
-    subplot(2,2,3);
+    subplot(3,2,3);
     quiver(x1,y1,u1,v1); 
     title('xy projection, vector field');
-    subplot(2,2,4);
-    quiver(x2,y2,u2,v2*.04); hold on;
+    subplot(3,2,4);
+    quiver(x2,y2,u2,v2*pars.zscale); hold on;
      title('xz projection, vector field');
     set(gcf,'color','w');
+    % show new error field
+    x1 = xyzRef(s,1); 
+    y1 = xyzRef(s,2);
+    u1 = xyzFix(s,1)-xyzRef(s,1); 
+    v1 = xyzFix(s,2)-xyzRef(s,2); 
+    x2 = xyzRef(s,1); 
+    y2 = xyzRef(s,3);
+    u2 = (xyzFix(s,1)-xyzRef(s,1)); 
+    v2 = (xyzFix(s,3)-xyzRef(s,3)); 
+     subplot(3,2,5);
+    quiver(x1,y1,u1,v1); 
+    title('xy projection, vector field, residual error');
+    subplot(3,2,6);
+    quiver(x2,y2,u2*pars.zscale*10,v2*pars.zscale); hold on;
+     title('xz projection, vector field, residual error');
+    set(gcf,'color','w');
+   
     
 
     bins = pars.bins; % 

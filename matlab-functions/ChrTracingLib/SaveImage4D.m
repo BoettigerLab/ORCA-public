@@ -32,7 +32,7 @@ binaryFormat = 'l';
 
 % write binary file
 fid = fopen(fullSaveName,'w+');
-fwrite(fid, uint16(reshape(datMat,sizeData,1)), 'int16',binaryFormat);
+fwrite(fid, uint16(reshape(datMat,sizeData,1)), 'uint16',binaryFormat);
 fclose(fid);
 
 % write info file

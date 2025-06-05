@@ -33,7 +33,7 @@ while ~feof(fid)
     fieldParts = strsplit(textIn,' = ');
     fieldName = fieldParts{1};
     fieldValue = fieldParts{2};
-    if ~strcmp('fieldName',textFields)
+    if ~strcmp(fieldName,textFields)
         fieldValue = str2num(fieldValue); %#ok<ST2NM>
     end
     structOut.(fieldName) = fieldValue;
