@@ -3,7 +3,8 @@ function [odds,odds_CI,contengencyTable,odds_stdev,oddsM] = OddsRatioCI(conditio
 % change 05/21/2026 by Derek Le:
 % (1) output contengencyTable to see counts in the contingency table
 % (2) added Haldane-Anscombe correction to account for possibility of 0's 
-% in the 2x2 contingency tables
+% in the 2x2 contingency tables 
+% (3) fixed lowLim and highLim for cI calculation
 
 
 % -------------------------------------------------------------------------
@@ -44,8 +45,8 @@ end
 odds = a*d/(b*c);
 
 if nargout > 1 
-    lowLim = (1 - pars.cI);
-    highLim = pars.cI;
+	lowLim = (1 - pars.cI)/2;
+	highLim = (1 - pars.cI)/2 + pars.cI;
     n = length(condition); 
     randSample = randi(n,pars.iters,n);
 
